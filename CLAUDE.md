@@ -120,10 +120,21 @@ TikTok 商品数据源开启后有商品对齐抽屉（`openProductLibraryDrawer
 
 `openRefTaskList` 与 `closeRefTaskList` 各定义了**两次**（`index.html:1478` 与 `index.html:3591`），后者覆盖前者，改前一处不会有任何效果。清理前先确认没人依赖前者的写法。
 
+## 远程仓库与提交
+
+远端 `https://github.com/gar-su/auto_put_v2`，**公开仓库**，默认分支 `main`。仓库内容含内部后台业务逻辑与真实投放标识符（回调模板 ID、像素 ID、渠道号），推送前想清楚可见性。
+本机**没装 `gh`**，走 GitHub API + git 凭据助手：PAT 存在 `~/.git-credentials`（账号 `gar-su`，scope 含 `repo`），远程 URL 用干净的 HTTPS 地址，token 不写进 `.git/config`。
+```bash
+TOK=$(grep -o 'https://[^@]*@github\.com' ~/.git-credentials | head -1 | sed 's|https://||;s|@github.com||' | sed 's|.*:||')
+curl -s -X POST -H "Authorization: token $TOK" https://api.github.com/user/repos \
+  -d '{"name":"<repo>","private":false}'
+git remote add origin https://github.com/gar-su/<repo>.git && git push -u origin main
+```
+`index.html.bak` 是旧备份，内容与当前 `index.html` 冲突（曾导致按它导出错误的字段表），已写进 `.gitignore`，不要入库。
+提交规范 `feat/fix/docs/chore: <中文描述>`。草稿类文档默认不提交，按需再入库。
+
 ## 需求文档写作约定
 
 - 紧凑格式：标题、正文、表格、列表之间**不留空行**，紧密排列；`---` 分节线紧贴前后；表格单元格内禁用加粗
 - 内容只描述**改动范围、交互、行为、验收标准**；**不写接口路径、请求参数、响应格式**等实现细节
 - 命名：功能名 + `-需求文档.md`，设计类用 `-设计文档.md`，平铺在仓库根目录
-- 草稿默认不提交（根目录多数文档处于 untracked 状态是常态）
-- 提交规范：`feat/fix/docs/chore: <中文描述>`
