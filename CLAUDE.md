@@ -5,27 +5,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 仓库定位
 
 **Meta自动化任务（v2）** 需求与原型仓库，**无构建系统、无测试、无包管理器、无后端代码**。产出物两类：
-- `index.html` — 单文件 UI 原型（内联 HTML/CSS/JS，约 3650 行），mock 数据硬编码，浏览器直接打开即可预览
+- `index.html` — 单文件 UI 原型（3681 行，内联 HTML/CSS/JS，mock 数据硬编码），浏览器直接打开即可预览
+- `index.html.bak` — 旧备份，已 gitignore，**别读它**：内容与当前 `index.html` 冲突
 - `*.md` — 需求文档与设计文档
 
 由 `auto_put`（v1）分叉而来，承接「任务模块化」改造及其后续产出物。v1 冻结、不再接受新需求，改动一律在 `auto_put_v2` 展开。跨平台同步事宜改由本仓库承担，改一个需求前先确认要不要带 `auto_put_tiktok`（TikTok 投放）端。
 
 ## 运行与验证
 
-无 lint / 无 typecheck / 无测试命令可跑（无 JS 工具链，`index.html` 内联全部代码、无外部 CDN 依赖，唯一 `<script>` 块从 `index.html:1287` 起）。预览即 `open index.html`。
+无 lint / 无 typecheck / 无测试命令可跑（无 JS 工具链，`index.html` 内联全部代码、无外部 CDN 依赖，唯一 `<script>` 块从 `index.html:1301` 起，到 `3679` 止）。预览即 `open index.html`。
 
-原型改动一律用 DOM 断言验证，**禁止截图**：headless Chrome + CDP（`--remote-debugging-port`，Node 自带全局 WebSocket，无需 playwright）驱动，`Runtime.evaluate` 断言元素存在性/文本/类名/几何/`scrollWidth`，`Input.dispatchMouseEvent` 测 hover，输出 JSON 核对；临时脚本写 `/tmp` 用完即删。
-四个坑：
+**改完先做语法体检**（比开浏览器快，能抓住绝大多数低级错误）：
+```bash
+node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>([\s\S]*)<\/script>/);new (require('vm').Script)(m[1]);console.log('OK')"
+```
+
+原型改动一律用 DOM 断言验证，**禁止截图**：headless Chrome + CDP（`--remote-debugging-port`，Node 自带全局 WebSocket，无需 playwright）驱动，`Runtime.evaluate` 断言元素存在性/文本/类名/几何/`scrollWidth`，`Input.dispatchMouseEvent` 测 hover，输出 JSON 核对；临时脚本写 `/tmp` 用完即删。以下坑按踩过的顺序记：
 - 抽屉树是 fixed 定位，判可见性要沿祖先链查 `display`/`visibility`，只用 `offsetParent` 会误判
 - `#pkgBody-*` 三个抽屉同时存在于 DOM，只按 `.form-item` 计数会把三个包的字段混在一起，必须先按 `#pkgBody-<type>` 限定范围
-- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内多次 `Runtime.evaluate` 才是稳定的。确定性的是 id、包引用、`1571..1590` 任务名。`autoTasks` 里 `i>=18` 的两条**故意引用停用包**，用来跑「失效标黄」路径，别当成脏数据清掉
+- **断言样式别只查溢出**：`.form-item label{width:140px}` 会命中所有后代 label，导致下拉选项文字**换行**。换行不产生 `scrollWidth > clientWidth`，查溢出的断言会全绿放过 → 补一条高度断言（单行 < 40px）
+- **`getElementById` 只返回首个匹配**，重复 id 会让断言"通过"而实际页面已坏。改完表单调一次重复 id 断言（`dupIds` 必须为 `[]`）
+- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内多次 `Runtime.evaluate` 才是稳定的。确定性的是 id、包引用、`1571..1577` 任务名、以及**任务 1577（`i===6`）恒引用停用包**——它专用来跑「失效标黄」路径，别当成脏数据清掉。`executionUnits`（`index.html:2543` 由 `autoTasks` 叉乘生成）的 `status` / `seriesCount` / `failReason` 同样是随机的，**唯一确定的是单元 id（从 4000 起）与它引用的四个包**
 - **headless 下 `alert()` / `confirm()` 会阻塞**，测试里点「添加媒体」「保存包」这类入口前先 stub `window.alert` / `window.confirm`，否则脚本挂死；报 `no matches found` 的 zsh glob 会中止整条命令，`rm` 与通配符别写在同一行
+- **抽屉有 `slideInRight .25s` 动画**，刚打开时还在屏外（`left:1600`），立刻查几何或 `elementFromPoint` 会拿到 `null`/错值；断言前先等 450ms
 
 ## 两份权威文档，读法不同
 
-- `自动化投放-需求文档.md` — 项目整体需求，重点在执行任务逻辑与页面结构。改任何包、任务表单或执行逻辑前先读它。
-- `MetaAutoTask-素材逻辑.md` — 唯一的领域权威文档，描述调度→落库的后台业务逻辑（短剧运行条件、素材规则、账户包与上限、去重、`persistCampaignAndChildren`、Kafka）。**不要拿 index.html 的原型行为当后台逻辑。**
-- `任务多对多-设计文档.md` — 后续版本规划（一个任务支持多媒体行 × 多包组合），当前原型**未实现**，仅作设计存档。
+- `自动化投放-需求文档.md` — 项目整体需求，重点在执行任务逻辑与页面结构。**本文档自称唯一权威需求文档**，改任何包、任务表单或执行逻辑前先读它。
+- `MetaAutoTask-素材逻辑.md` — 唯一的**领域**权威文档，描述调度→落库的后台业务逻辑（短剧运行条件、素材规则、账户包与上限、去重、`persistCampaignAndChildren`、Kafka）。**不要拿 index.html 的原型行为当后台逻辑。**
+- `任务多对多-设计文档.md` — 多媒体行 × 多包组合的设计存档。原型**已按此实现**，文档内容基本落地；差异是它写「三包各多选」，实际媒体行锁定为「一行一对账户包/策略包」，所以多对多只发生在短剧包与素材包两个维度。改引用结构前可对照，但**以原型与需求文档为准**。
+
+三者有冲突时：执行逻辑听素材逻辑文档，交互与字段听需求文档，原型只是原型的实现。
 
 ## 页面模型
 
@@ -74,9 +84,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **`renderTable` 里 `const ok=row.uploadStatus!=='上传成功'` 语义是反的**——`ok` 为真表示「没上传成功」，据此给 checkbox 和按钮加 `disabled`；照字面理解会写反。
 `syncBatchCounts()` 每次把全选框强制置为未选，与列表自己的选中态是两套逻辑，改批量条前先看清走的是哪条。
 
-`.btn-option` 按钮组有**三个互不相通的接线点**，新增一组要挑对地方：`bindBtnGroup(sel)` 通用版（`index.html:2296` 起，内含 `#materialCountType` / `#singleRoundRepeatType` 等硬编码特判）、带可选回调的 cfg 数组、以及 `#materialFilterType` / `#materialModeBtns` / `#dpRuleModeBtns` 等自带 handler 的。`setBtnGroup()` / `btnVal()` 是所有 `init*Pkg` 用的程序化读写口。复选框组必须包在 `.check-group` 里，否则 label 的 `checked` 类不更新。
+`.btn-option` 按钮组有**三个互不相通的接线点**，新增一组要挑对地方：`bindBtnGroup(sel)` 通用版（`index.html:2310` 起，内含 `#materialCountType` / `#singleRoundRepeatType` 等硬编码特判）、带可选回调的 cfg 数组、以及 `#materialFilterType` / `#materialModeBtns` / `#dpRuleModeBtns` 等自带 handler 的。`setBtnGroup()` / `btnVal()` 是所有 `init*Pkg` 用的程序化读写口。复选框组必须包在 `.check-group` 里，否则 label 的 `checked` 类不更新。
 
-初始化集中在 `index.html:3651` 一行——新增全局渲染入口挂这里。
+初始化集中在 `index.html:3678` 一行（`initTaskFilterOptions();refreshTaskPkgOptions();…renderAds()`）——新增全局渲染入口挂这里。
 
 ## 任务表单与执行单元（多对多的当前形态）
 
@@ -118,7 +128,7 @@ TikTok 商品数据源开启后有商品对齐抽屉（`openProductLibraryDrawer
 
 ## 已知重复定义
 
-`openRefTaskList` 与 `closeRefTaskList` 各定义了**两次**（`index.html:1478` 与 `index.html:3591`），后者覆盖前者，改前一处不会有任何效果。清理前先确认没人依赖前者的写法。
+`openRefTaskList` 与 `closeRefTaskList` 各定义了**两次**（`index.html:1492` 与 `index.html:3618`），后者覆盖前者，改前一处不会有任何效果。清理前先确认没人依赖前者的写法。
 
 ## 远程仓库与提交
 
