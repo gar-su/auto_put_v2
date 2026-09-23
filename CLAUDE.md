@@ -122,14 +122,30 @@ TikTok 商品数据源开启后有商品对齐抽屉（`openProductLibraryDrawer
 
 ## 远程仓库与提交
 
-远端 `https://github.com/gar-su/auto_put_v2`，**公开仓库**，默认分支 `main`。仓库内容含内部后台业务逻辑与真实投放标识符（回调模板 ID、像素 ID、渠道号），推送前想清楚可见性。
+远端 `https://github.com/gar-su/auto_put_v2`，**公开仓库**，默认分支 `main`，已开 Pages：`https://gar-su.github.io/auto_put_v2/`。仓库内容含内部后台业务逻辑与真实投放标识符（回调模板 ID、像素 ID、渠道号），推送前想清楚可见性——Pages 让原型成为可直接浏览的公开网页，比读源码更易被发现和索引。
 本机**没装 `gh`**，走 GitHub API + git 凭据助手：PAT 存在 `~/.git-credentials`（账号 `gar-su`，scope 含 `repo`），远程 URL 用干净的 HTTPS 地址，token 不写进 `.git/config`。
+建仓、推送、开 Pages 可全程走命令行，不用去 GitHub 后台：
 ```bash
 TOK=$(grep -o 'https://[^@]*@github\.com' ~/.git-credentials | head -1 | sed 's|https://||;s|@github.com||' | sed 's|.*:||')
+R=<repo>   # 换成目标仓库名
+
+# 1 建仓
 curl -s -X POST -H "Authorization: token $TOK" https://api.github.com/user/repos \
-  -d '{"name":"<repo>","private":false}'
-git remote add origin https://github.com/gar-su/<repo>.git && git push -u origin main
+  -d "{\"name\":\"$R\",\"private\":false}"
+
+# 2 推送
+git remote add origin https://github.com/gar-su/$R.git && git push -u origin main
+
+# 3 开 Pages（仓库已开 Pages 时返回 409，属正常）
+curl -s -X POST -H "Authorization: token $TOK" \
+  https://api.github.com/repos/gar-su/$R/pages \
+  -d '{"source":{"branch":"main","path":"/"}}'
+
+# 4 轮询到 built（首次约 1–2 分钟）
+curl -s -H "Authorization: token $TOK" https://api.github.com/repos/gar-su/$R/pages
 ```
+开 Pages 的三个前提：仓库根目录须有 `index.html`，否则得改用 GitHub Actions 工作流构建（`build_type: "workflow"`）；免费账号只有**公开**仓库能开 Pages，私有仓库需付费计划；POST 返回成功不等于站点可用，要轮询到 `status: built` 再把地址给出。
+推送 `main` 会自动触发 Pages 重建，无需手动操作。关站：`DELETE /repos/gar-su/<repo>/pages`。
 `index.html.bak` 是旧备份，内容与当前 `index.html` 冲突（曾导致按它导出错误的字段表），已写进 `.gitignore`，不要入库。
 提交规范 `feat/fix/docs/chore: <中文描述>`。草稿类文档默认不提交，按需再入库。
 
