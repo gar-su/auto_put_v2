@@ -74,6 +74,8 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 - `taskRefIds(t, type)` / `refTasksOf()` 反向查引用；`taskBadPkgs()` / `pkgCellMulti()` 渲染失效标黄与多值压缩；`openPkgView` 是只读摘要抽屉
 
 新增一个包 = 加 `PKG_CONF` 条目 + 一段 `#pkgBody-<type>` 标记 + 一个 `init<Pkg>Pkg()`，不要新建文件。
+**包名称 / 媒体 / 广告系列名称后缀是四个包共用的抽屉顶层字段，不在任何 `#pkgBody-*` 里**（`#pkgBody-media` 是从「广告目标」才开始的）。加这类共用字段时，靠 `PKG_CONF` 上的布尔开关控制显隐（`hasMedia`、`hasSuffix`），并在 `openPkgDrawer` 里 toggle + 回填、在 `submitPkgDrawer` 里按同一个开关收集，不要写 `type==='media'` 散判。
+账户包是例外：`openPkgDrawer('account')` 第一行就转 `openAccountPackageDrawer` 并 return，共用字段一律不重置——它用的是另一个 overlay（`#accountPackageDrawer`），不是 `#pkgDrawer`，所以共用区残留旧值不会露出来，别当成 bug 修。
 **影子映射要同步**（不在 `PKG_CONF` 里，加包时最容易漏）：`PKG_TYPE_LABEL`（抽屉标题用的中文名，与 `PKG_CONF[type].label` 重复）、`SEL_TO_TYPE`（只读摘要下拉 id → 包类型）。
 
 核心 mock：`mockAccountPackages` / `mockMaterialPackages` / `mockDramaPackages` / `mockMediaPackages` / `mockTargetingPackages` / `mockDramaLib` / `mockMaterialData` / `mockAllAccounts` / `mockCallbackPlans` / `mockMonitorLinks` / `mockChannels` / `autoTasks` / `executionUnits`。
@@ -123,6 +125,7 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 ## 投放策略包
 
 包表单由**媒体 × 广告目标**两级决定（`MP_CHANNELS`），四种组合字段集互不相同，分桶 `['account','campaign','adGroup','ad']`。改字段先读 `MP_CHANNELS` 与 `mpRefresh` / `mpCollect` / `mpValidate`，条件显隐走 `showWhen` / `hideWhen`（支持 `['字段','值']` 与 `['字段','v1','v2']` 两种写法，由 `condHit` 解析）。
+**投放策略包不含定向包字段**——定向包跟着短剧包走，由短剧包按圈剧语言分行分配（见「短剧包」一节）。历史上 MP 的「广告组设置」里曾有一个 `targetingPackage` 下拉，已移除，**不要加回来**：定向包是媒体级且与语种绑定的，塞进策略包会与短剧包的语种行重复建模。移除后 Meta/销量的 `adGroup` 为空数组，分组标题靠 `renderMpSchema` 里的 `fs.length?...:''` 自动不渲染，不是 bug。
 `mockMediaPackages[].strategy` 是字符串 `'W2A' | 'H5' | '直投'`，而 `mockCallbackPlans[].strategy` 是数字 `1/2/4`，靠 `MP_STRATEGY_CODE` 换算。回传模板按 strategy × businessType 过滤，H5 链接（`mockMonitorLinks`）固定取 `strategy===4`。
 TikTok 商品数据源开启后有商品对齐抽屉（`openProductLibraryDrawer`，三栏，`pl*` 前缀）。
 

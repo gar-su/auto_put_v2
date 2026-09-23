@@ -49,6 +49,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:6px}
 .filter-label{font-size:13px;color:var(--text-secondary);white-space:nowrap}
 
+/* 媒体渠道拆分（广告系列/广告组/广告） */
+.channel-bar{background:var(--white);border-radius:6px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.channel-tab{height:34px;padding:0 18px;border:1px solid var(--border);border-radius:4px;background:var(--white);color:var(--text);font-size:14px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;white-space:nowrap}
+.channel-tab:hover{border-color:var(--primary);color:var(--primary)}
+.channel-tab.active{background:var(--primary);border-color:var(--primary);color:var(--white)}
+.channel-tab.active:hover{background:var(--primary);color:var(--white)}
+.channel-tab .channel-count{font-size:13px;opacity:.75;margin-left:2px}
+
 /* 按钮 */
 .btn{padding:7px 16px;border-radius:4px;font-size:14px;cursor:pointer;border:1px solid transparent;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .btn-primary{background:var(--primary);color:var(--white);border-color:var(--primary)}
@@ -168,6 +176,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .time-input:focus{border-color:var(--primary)}
 .add-time-btn{color:var(--primary);font-size:14px;cursor:pointer;align-self:flex-start}
 .add-time-btn:hover{color:var(--primary-light)}
+
+/* ========== 生效日期 ========== */
+.ed-head{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:32px}
+.ed-toggle{color:var(--primary);font-size:14px;cursor:pointer;user-select:none}
+.ed-toggle:hover{color:var(--primary-light)}
+.ed-clear{height:32px;padding:0 16px;border:1px solid #dcdfe6;border-radius:4px;background:#fff;color:#606266;font-size:14px;cursor:pointer}
+.ed-clear:hover{border-color:var(--primary);color:var(--primary)}
+.ed-panel{width:100%;border:1px dashed #dcdfe6;border-radius:4px;padding:16px;display:flex;gap:16px}
+.ed-cal-wrap{flex:1;min-width:0}
+.ed-week-wrap{width:170px;flex-shrink:0;border-left:1px solid #ebeef5;padding-left:16px}
+.ed-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ed-cal-title{font-size:14px;color:var(--text);font-weight:500}
+.ed-badge{font-size:12px;color:var(--text-secondary);background:#f4f4f5;border-radius:3px;padding:2px 8px}
+.ed-month{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:8px}
+.ed-month-label{font-size:14px;color:var(--text)}
+.ed-nav{color:var(--text-secondary);cursor:pointer;font-size:16px;user-select:none;padding:0 8px;line-height:1}
+.ed-nav:hover{color:var(--primary)}
+.ed-weekhead,.ed-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ed-weekhead span{text-align:center;font-size:13px;color:var(--text-secondary);padding:4px 0}
+.ed-day{height:34px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#606266;border-radius:3px;cursor:pointer;user-select:none}
+.ed-day:hover{background:#f5f7fa}
+.ed-day.ed-out{color:#c0c4cc}
+.ed-day.ed-disabled{color:#c0c4cc;cursor:not-allowed;background:transparent}
+.ed-day.ed-disabled:hover{background:transparent}
+.ed-day.ed-edge{background:var(--primary);color:#fff}
+.ed-day.ed-edge:hover{background:var(--primary)}
+.ed-day.ed-inrange{background:#d9e8ff;color:#2b6cd4}
+.ed-day.ed-inrange:hover{background:#d9e8ff}
+.ed-day.ed-week{background:#fdf6ec;color:var(--warning)}
+.ed-day.ed-week:hover{background:#fdf6ec}
+.ed-day.ed-both{background:var(--warning);color:#fff}
+.ed-day.ed-both:hover{background:var(--warning)}
+.ed-legend{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.ed-legend>span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)}
+.ed-lg{width:14px;height:14px;border-radius:3px;display:inline-block}
+.ed-lg-edge{background:var(--primary)}
+.ed-lg-inrange{background:#d9e8ff}
+.ed-lg-week{background:#fdf6ec;border:1px solid #f5dab1}
+.ed-lg-both{background:var(--warning)}
+.ed-lg-disabled{background:#e4e7ed}
+.ed-week-item{display:flex;align-items:center;gap:10px;height:42px;border:1px solid #dcdfe6;border-radius:4px;padding:0 12px;margin-bottom:8px;cursor:pointer;font-size:14px;color:#606266;user-select:none}
+.ed-week-item:last-child{margin-bottom:0}
+.ed-week-item:hover{border-color:var(--primary)}
+.ed-week-item.on{border-color:var(--primary);background:#ecf5ff}
+.ed-week-item input{pointer-events:none;width:15px;height:15px;accent-color:var(--primary)}
+.ed-summary{width:100%;border:1px solid #ebeef5;border-radius:4px;padding:14px 16px;background:#fafafa}
+.ed-summary-title{font-size:14px;color:var(--text);margin-bottom:8px}
+.ed-summary-body{font-size:13px;color:var(--text-secondary);line-height:1.9}
+.ed-date-tag{display:inline-block;background:#fff;border:1px solid #dcdfe6;border-radius:3px;padding:1px 8px;margin:0 6px 6px 0;font-size:12px;color:#606266}
+.ed-tz{font-size:12px;color:var(--text-secondary)}
 .condition-group{display:flex;flex-direction:column;gap:8px;width:100%}
 .condition-row{display:flex;align-items:center;gap:8px}
 .condition-select{height:32px;padding:4px 12px;border:1px solid #dcdfe6;border-radius:4px;font-size:14px;color:#606266;outline:none;background:var(--white);min-width:140px}
@@ -505,19 +563,20 @@ tr.unit-row:hover>td{background:#f5f7fa}
 
   <!-- 广告系列列表 -->
   <div class="page-container" id="page-campaign">
+    <div class="channel-bar" id="campaignChannelBar"></div>
     <div class="toolbar">
       <span class="date-mode-toggle">
         <button class="btn-option active" style="padding:0 8px;font-size:12px">按日</button>
         <button class="btn-option" style="padding:0 8px;font-size:12px">按月</button>
       </span>
-      <input type="text" placeholder="开始日期" style="width:100px">
-      <input type="text" placeholder="结束日期" style="width:100px">
-      <input type="text" placeholder="任务ID" style="width:120px">
-      <input type="text" placeholder="任务名称" style="width:150px">
-      <input type="text" placeholder="上传广告系列ID" style="width:150px">
-      <input type="text" placeholder="账户名称" style="width:150px">
-      <input type="text" placeholder="系列名称" style="width:150px">
-      <select><option value="">广告系列状态</option><option>已开启</option><option>已关闭</option></select>
+      <input type="text" id="campFilterStart" placeholder="开始日期" style="width:100px">
+      <input type="text" id="campFilterEnd" placeholder="结束日期" style="width:100px">
+      <input type="text" id="campFilterTaskId" placeholder="任务ID" style="width:120px">
+      <input type="text" id="campFilterTaskName" placeholder="任务名称" style="width:150px">
+      <input type="text" id="campFilterCampaignId" placeholder="上传广告系列ID" style="width:150px">
+      <input type="text" id="campFilterAccount" placeholder="账户名称" style="width:150px">
+      <input type="text" id="campFilterName" placeholder="系列名称" style="width:150px">
+      <select id="campFilterStatus"><option value="">广告系列状态</option><option>已开启</option><option>已关闭</option></select>
       <select><option value="">请选择剧本</option></select>
       <select><option value="">请选择短剧</option></select>
       <input type="text" placeholder="输入渠道号" style="width:150px">
@@ -527,15 +586,15 @@ tr.unit-row:hover>td{background:#f5f7fa}
         <input type="text" placeholder="监测链接ID/名称" style="width:150px;padding-right:24px">
         <span onclick="openBatchLinkModal()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);cursor:pointer;color:#909399;font-size:14px;line-height:1" title="批量搜索">☰</span>
       </span>
-      <button class="btn btn-default btn-sm">查询</button>
-      <button class="btn btn-default btn-sm">重置</button>
+      <button class="btn btn-default btn-sm" onclick="applyCampaignFilter()">查询</button>
+      <button class="btn btn-default btn-sm" onclick="resetCampaignFilter()">重置</button>
     </div>
     <div class="table-wrap"><table>
     <div class="table-batch-bar" data-body="campaignTableBody" style="margin-bottom:12px;display:flex;align-items:center;gap:12px">
       <span class="batch-info" style="font-size:13px;color:var(--text-secondary)">已选择 <b>0</b> 条</span>
       <button type="button" class="btn btn-default btn-sm batch-retry-btn" style="color:#e6a23c;border-color:#e6a23c">批量重试</button>
     </div>
-      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="campaignTableBody"></th><th>ID</th><th>任务ID</th><th>广告系列ID</th><th>广告系列名称</th><th>账户名称</th><th>账户ID</th><th>剧本编号</th><th>剧本名称</th><th>短剧名称</th><th>渠道名称</th><th>渠道号</th><th>上传状态</th><th>系列状态</th><th>竞价策略</th><th>日预算</th><th>优化目标</th><th>失败原因</th><th>链接名称</th><th>回传模板</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="campaignTableBody"></th><th>ID</th><th>任务ID</th><th>媒体</th><th>广告系列ID</th><th>广告系列名称</th><th>账户名称</th><th>账户ID</th><th>剧本编号</th><th>剧本名称</th><th>短剧名称</th><th>渠道名称</th><th>渠道号</th><th>上传状态</th><th>系列状态</th><th>竞价策略</th><th>日预算</th><th>优化目标</th><th>失败原因</th><th>链接名称</th><th>回传模板</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
       <tbody id="campaignTableBody"></tbody>
     </table></div>
     <div class="pagination" id="campaignPagination"></div>
@@ -543,34 +602,35 @@ tr.unit-row:hover>td{background:#f5f7fa}
 
   <!-- 广告组列表 -->
   <div class="page-container" id="page-adgroup">
+    <div class="channel-bar" id="adgroupChannelBar"></div>
     <div class="toolbar">
       <span class="date-mode-toggle">
         <button class="btn-option active" style="padding:0 8px;font-size:12px">按日</button>
         <button class="btn-option" style="padding:0 8px;font-size:12px">按月</button>
       </span>
-      <input type="text" placeholder="开始日期" style="width:100px">
-      <input type="text" placeholder="结束日期" style="width:100px">
-      <input type="text" placeholder="任务ID" style="width:120px">
-      <input type="text" placeholder="任务名称" style="width:150px">
-      <input type="text" placeholder="账户名称" style="width:150px">
-      <input type="text" placeholder="上传系列ID" style="width:150px">
-      <input type="text" placeholder="系列名称" style="width:150px">
-      <input type="text" placeholder="上传广告组ID" style="width:150px">
-      <input type="text" placeholder="广告组名称" style="width:150px">
-      <select><option value="">广告组状态</option><option>已开启</option><option>已关闭</option></select>
+      <input type="text" id="agFilterStart" placeholder="开始日期" style="width:100px">
+      <input type="text" id="agFilterEnd" placeholder="结束日期" style="width:100px">
+      <input type="text" id="agFilterTaskId" placeholder="任务ID" style="width:120px">
+      <input type="text" id="agFilterTaskName" placeholder="任务名称" style="width:150px">
+      <input type="text" id="agFilterAccount" placeholder="账户名称" style="width:150px">
+      <input type="text" id="agFilterSeriesId" placeholder="上传系列ID" style="width:150px">
+      <input type="text" id="agFilterSeriesName" placeholder="系列名称" style="width:150px">
+      <input type="text" id="agFilterAdgroupId" placeholder="上传广告组ID" style="width:150px">
+      <input type="text" id="agFilterName" placeholder="广告组名称" style="width:150px">
+      <select id="agFilterStatus"><option value="">广告组状态</option><option>已开启</option><option>已关闭</option></select>
       <select><option value="">请选择短剧</option></select>
       <input type="text" placeholder="输入渠道号" style="width:150px">
       <select><option value="">请选择竞价策略</option><option>转化价值最大化</option><option>广告花费回报目标</option><option>销量</option></select>
       <select><option value="">选择业务类型</option><option>付费</option><option>免费</option></select>
-      <button class="btn btn-default btn-sm">查询</button>
-      <button class="btn btn-default btn-sm">重置</button>
+      <button class="btn btn-default btn-sm" onclick="applyAdgroupFilter()">查询</button>
+      <button class="btn btn-default btn-sm" onclick="resetAdgroupFilter()">重置</button>
     </div>
     <div class="table-wrap"><table>
     <div class="table-batch-bar" data-body="adgroupTableBody" style="margin-bottom:12px;display:flex;align-items:center;gap:12px">
       <span class="batch-info" style="font-size:13px;color:var(--text-secondary)">已选择 <b>0</b> 条</span>
       <button type="button" class="btn btn-default btn-sm batch-retry-btn" style="color:#e6a23c;border-color:#e6a23c">批量重试</button>
     </div>
-      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="adgroupTableBody"></th><th>ID</th><th>任务ID</th><th>上传系列ID</th><th>广告组名称</th><th>账户信息</th><th>投放短剧</th><th>上传状态</th><th>广告组状态</th><th>定向包</th><th>失败原因</th><th>优化目标</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="adgroupTableBody"></th><th>ID</th><th>任务ID</th><th>媒体</th><th>上传系列ID</th><th>广告组名称</th><th>账户信息</th><th>投放短剧</th><th>上传状态</th><th>广告组状态</th><th>定向包</th><th>失败原因</th><th>优化目标</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
       <tbody id="adgroupTableBody"></tbody>
     </table></div>
     <div class="pagination" id="adgroupPagination"></div>
@@ -578,30 +638,31 @@ tr.unit-row:hover>td{background:#f5f7fa}
 
   <!-- 广告列表 -->
   <div class="page-container" id="page-ad">
+    <div class="channel-bar" id="adChannelBar"></div>
     <div class="toolbar">
       <span class="date-mode-toggle">
         <button class="btn-option active" style="padding:0 8px;font-size:12px">按日</button>
         <button class="btn-option" style="padding:0 8px;font-size:12px">按月</button>
       </span>
-      <input type="text" placeholder="开始日期" style="width:100px">
-      <input type="text" placeholder="结束日期" style="width:100px">
-      <input type="text" placeholder="任务ID" style="width:120px">
-      <input type="text" placeholder="账户名称" style="width:150px">
+      <input type="text" id="adFilterStart" placeholder="开始日期" style="width:100px">
+      <input type="text" id="adFilterEnd" placeholder="结束日期" style="width:100px">
+      <input type="text" id="adFilterTaskId" placeholder="任务ID" style="width:120px">
+      <input type="text" id="adFilterAccount" placeholder="账户名称" style="width:150px">
       <select><option value="">选择短剧</option></select>
-      <input type="text" placeholder="上传广告组ID" style="width:150px">
-      <input type="text" placeholder="广告组ID" style="width:150px">
+      <input type="text" id="adFilterAdgroupId" placeholder="上传广告组ID" style="width:150px">
+      <input type="text" id="adFilterAdGroup" placeholder="广告组ID" style="width:150px">
       <select><option value="">选择竞价策略</option><option>转化价值最大化</option><option>广告花费回报目标</option><option>销量</option></select>
       <select><option value="">选择业务类型</option><option>付费</option><option>免费</option></select>
-      <select><option value="">选择上传状态</option><option>待上传</option><option>上传成功</option><option>上传失败</option></select>
-      <button class="btn btn-default btn-sm">查询</button>
-      <button class="btn btn-default btn-sm">重置</button>
+      <select id="adFilterStatus"><option value="">选择上传状态</option><option>待上传</option><option>上传成功</option><option>上传失败</option></select>
+      <button class="btn btn-default btn-sm" onclick="applyAdFilter()">查询</button>
+      <button class="btn btn-default btn-sm" onclick="resetAdFilter()">重置</button>
     </div>
     <div class="table-wrap"><table>
     <div class="table-batch-bar" data-body="adTableBody" style="margin-bottom:12px;display:flex;align-items:center;gap:12px">
       <span class="batch-info" style="font-size:13px;color:var(--text-secondary)">已选择 <b>0</b> 条</span>
       <button type="button" class="btn btn-default btn-sm batch-retry-btn" style="color:#e6a23c;border-color:#e6a23c">批量重试</button>
     </div>
-      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="adTableBody"></th><th>ID</th><th>任务ID</th><th>广告系列ID</th><th>广告组ID</th><th>上传广告组ID</th><th>广告ID</th><th>账户名称</th><th>账户ID</th><th>上传状态</th><th>广告状态</th><th>多广告主</th><th>失败原因</th><th>素材名称</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th><input type="checkbox" class="select-all-check" data-body="adTableBody"></th><th>ID</th><th>任务ID</th><th>媒体</th><th>广告系列ID</th><th>广告组ID</th><th>上传广告组ID</th><th>广告ID</th><th>账户名称</th><th>账户ID</th><th>上传状态</th><th>广告状态</th><th>多广告主</th><th>失败原因</th><th>素材名称</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
       <tbody id="adTableBody"></tbody>
     </table></div>
     <div class="pagination" id="adPagination"></div>
@@ -632,6 +693,49 @@ tr.unit-row:hover>td{background:#f5f7fa}
           <button type="button" class="btn-option active" data-status="1">启用</button>
           <button type="button" class="btn-option" data-status="0">停用</button>
         </div></div>
+      </div>
+      <div class="form-item">
+        <label>生效日期</label>
+        <div class="form-control">
+          <div class="ed-head">
+            <span class="ed-toggle" id="edToggle" onclick="toggleEffectiveDate()"></span>
+            <button type="button" class="ed-clear" onclick="clearEffectiveDate()">清空</button>
+          </div>
+          <div class="ed-panel" id="edPanel">
+            <div class="ed-cal-wrap">
+              <div class="ed-cal-head">
+                <span class="ed-cal-title">日期范围</span>
+                <span class="ed-badge">区间最多 90 天</span>
+              </div>
+              <div class="ed-month">
+                <span class="ed-nav" onclick="edShiftMonth(-1)">&lsaquo;</span>
+                <span class="ed-month-label" id="edMonthLabel"></span>
+                <span class="ed-nav" onclick="edShiftMonth(1)">&rsaquo;</span>
+              </div>
+              <div class="ed-weekhead"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+              <div class="ed-grid" id="edGrid"></div>
+              <div class="ed-legend">
+                <span><i class="ed-lg ed-lg-edge"></i>起止</span>
+                <span><i class="ed-lg ed-lg-inrange"></i>范围内</span>
+                <span><i class="ed-lg ed-lg-week"></i>每周固定</span>
+                <span><i class="ed-lg ed-lg-both"></i>交集</span>
+                <span><i class="ed-lg ed-lg-disabled"></i>不可选</span>
+              </div>
+            </div>
+            <div class="ed-week-wrap">
+              <div class="ed-cal-head">
+                <span class="ed-cal-title">每周固定</span>
+                <span class="ed-badge">可多选</span>
+              </div>
+              <div id="edWeekList"></div>
+            </div>
+          </div>
+          <div class="ed-summary">
+            <div class="ed-summary-title">已选生效日期</div>
+            <div class="ed-summary-body" id="edSummary"></div>
+          </div>
+          <div class="ed-tz">时区：东八区（UTC+8）</div>
+        </div>
       </div>
       <div class="form-item">
         <label><span class="required">*</span>生效时间(UTC+8)</label>
@@ -790,6 +894,13 @@ tr.unit-row:hover>td{background:#f5f7fa}
         <div class="form-control">
           <input type="text" class="input-text" id="pkgName" maxlength="50" placeholder="请输入包名称">
           <div class="char-count" id="pkgNameCount">0 / 50</div>
+        </div>
+      </div>
+      <div class="form-item" id="pkgSuffixItem" style="display:none">
+        <label>广告系列名称后缀</label>
+        <div class="form-control">
+          <input type="text" class="input-text" id="pkgSuffix" maxlength="10" placeholder="请输入广告系列名称后缀">
+          <div class="char-count" id="pkgSuffixCount">0 / 10</div>
         </div>
       </div>
       <div class="form-item" id="pkgMediaItem" style="display:none">
@@ -1364,6 +1475,7 @@ function openTaskModal(taskId){
   mediaRows=t&&t.mediaRows?t.mediaRows.map(r=>({...r})):[{media:'',mediaPkgId:'',accountPkgId:''}];
   multiPkgSel.drama=t?[].concat(t.dramaPkgId):[];
   multiPkgSel.material=t?[].concat(t.materialPkgId):[];
+  resetEffectiveDate(t?t.effectiveDates:null);
   refreshTaskPkgOptions();
 }
 function closeTaskModal(){document.getElementById('taskModalOverlay').style.display='none';resetTaskForm()}
@@ -1374,6 +1486,91 @@ function resetTaskForm(){
   document.getElementById('autoTaskForm').reset();
   document.getElementById('taskNameCount').textContent='0 / 50';
   resetAccountDrawerRefs();
+  resetEffectiveDate(null);
+}
+
+// ==================== 生效日期 ====================
+// 生效日期 = 日期范围 ∩ 每周固定（两个条件都填时取交集）；都不填 = 不限日期，每天可执行
+const ED_WEEK=[{v:1,l:'周一'},{v:2,l:'周二'},{v:3,l:'周三'},{v:4,l:'周四'},{v:5,l:'周五'},{v:6,l:'周六'},{v:0,l:'周日'}];
+const ED_RANGE_MAX=90;
+const effectiveDate={start:null,end:null,weekdays:new Set(),collapsed:false,viewMonth:null};
+function edPad(n){return String(n).padStart(2,'0')}
+function edKey(d){return d.getFullYear()+'-'+edPad(d.getMonth()+1)+'-'+edPad(d.getDate())}
+function edParse(k){const p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
+function edToday(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())}
+// 仅在「已选起点、未选终点」时限制区间长度，保证第二次点击一定落在 90 天内
+function edOverLimit(d){
+  const s=effectiveDate.start;
+  if(!s||effectiveDate.end)return false;
+  return Math.abs(Math.round((d-edParse(s))/86400000))>ED_RANGE_MAX-1;
+}
+function edDisabled(d){return d<edToday()||edOverLimit(d)}
+function edPick(k){
+  if(edDisabled(edParse(k)))return;
+  const s=effectiveDate.start,e=effectiveDate.end;
+  if(!s||(s&&e)){effectiveDate.start=k;effectiveDate.end=null}
+  else if(k<s){effectiveDate.end=s;effectiveDate.start=k}
+  else effectiveDate.end=k;
+  renderEffectiveDate();
+}
+function edToggleWeek(v){effectiveDate.weekdays.has(v)?effectiveDate.weekdays.delete(v):effectiveDate.weekdays.add(v);renderEffectiveDate()}
+function edShiftMonth(n){const m=effectiveDate.viewMonth;effectiveDate.viewMonth=new Date(m.getFullYear(),m.getMonth()+n,1);renderEffectiveDate()}
+function toggleEffectiveDate(){effectiveDate.collapsed=!effectiveDate.collapsed;renderEffectiveDate()}
+function clearEffectiveDate(){effectiveDate.start=null;effectiveDate.end=null;effectiveDate.weekdays.clear();renderEffectiveDate()}
+function resetEffectiveDate(data){
+  effectiveDate.start=(data&&data.start)||null;
+  effectiveDate.end=(data&&data.end)||null;
+  effectiveDate.weekdays=new Set((data&&data.weekdays)||[]);
+  effectiveDate.collapsed=false;effectiveDate.viewMonth=null;
+  renderEffectiveDate();
+}
+function edEffectiveDates(){
+  const s=effectiveDate.start,wk=effectiveDate.weekdays;
+  if(!s&&!wk.size)return null;               // 不限日期
+  if(!s)return{weekly:true};                 // 只勾周几：长期有效
+  const a=edParse(s),b=edParse(effectiveDate.end||s),out=[];
+  for(const d=new Date(a.getFullYear(),a.getMonth(),a.getDate());d<=b;d.setDate(d.getDate()+1)){
+    if(!wk.size||wk.has(d.getDay()))out.push(edKey(d));
+  }
+  return{weekly:false,dates:out};
+}
+function renderEffectiveDate(){
+  const panel=document.getElementById('edPanel');if(!panel)return;
+  const today=edToday();
+  if(!effectiveDate.viewMonth){
+    const base=effectiveDate.start?edParse(effectiveDate.start):today;
+    effectiveDate.viewMonth=new Date(base.getFullYear(),base.getMonth(),1);
+  }
+  const vm=effectiveDate.viewMonth;
+  panel.style.display=effectiveDate.collapsed?'none':'flex';
+  document.getElementById('edToggle').textContent=effectiveDate.collapsed?'展开 ⌄':'收起 ⌃';
+  document.getElementById('edMonthLabel').textContent=vm.getFullYear()+' 年 '+(vm.getMonth()+1)+' 月';
+  const lead=(new Date(vm.getFullYear(),vm.getMonth(),1).getDay()+6)%7;
+  let h='';
+  for(let i=0;i<42;i++){
+    const d=new Date(vm.getFullYear(),vm.getMonth(),1-lead+i),k=edKey(d);
+    const dis=edDisabled(d),isEdge=k===effectiveDate.start||k===effectiveDate.end;
+    const inRange=!!(effectiveDate.start&&effectiveDate.end&&k>effectiveDate.start&&k<effectiveDate.end);
+    const wk=effectiveDate.weekdays.has(d.getDay());
+    let cls='ed-day';
+    if(d.getMonth()!==vm.getMonth())cls+=' ed-out';
+    if(dis)cls+=' ed-disabled';
+    else if(isEdge)cls+=' ed-edge';
+    else if(wk&&inRange)cls+=' ed-both';
+    else if(inRange)cls+=' ed-inrange';
+    else if(wk)cls+=' ed-week';
+    h+='<div class="'+cls+'"'+(dis?'':' onclick="edPick(\''+k+'\')"')+'>'+d.getDate()+'</div>';
+  }
+  document.getElementById('edGrid').innerHTML=h;
+  document.getElementById('edWeekList').innerHTML=ED_WEEK.map(w=>'<div class="ed-week-item'+(effectiveDate.weekdays.has(w.v)?' on':'')+'" onclick="edToggleWeek('+w.v+')"><input type="checkbox"'+(effectiveDate.weekdays.has(w.v)?' checked':'')+'>'+w.l+'</div>').join('');
+  const box=document.getElementById('edSummary'),r=edEffectiveDates();
+  if(!r){box.textContent='暂未选择 — 选择日期范围或每周固定';return}
+  const wkText=ED_WEEK.filter(w=>effectiveDate.weekdays.has(w.v)).map(w=>w.l).join('、');
+  if(r.weekly){box.textContent='每周 '+wkText+'（长期有效，至任务停用）';return}
+  const a=effectiveDate.start,b=effectiveDate.end||effectiveDate.start;
+  let txt=(a===b?a:a+' ~ '+b)+'，共 '+r.dates.length+' 天';
+  if(wkText)txt+='（'+wkText+'）';
+  box.innerHTML=txt+(r.dates.length<=31?'<div style="margin-top:6px">'+r.dates.map(k=>'<span class="ed-date-tag">'+k+'</span>').join('')+'</div>':'');
 }
 
 // ==================== 账户包（瘦身：名称 / 媒体 / 账户名单） ====================
@@ -1390,11 +1587,11 @@ const mockAccountPackages = [
 
 // ==================== 投放策略包（媒体级：投放形态 + 追踪配置 + 线上投放三组字段） ====================
 const mockMediaPackages=[
-  {id:701,name:'Meta-W2A-美区标准',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH001',status:'启用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079052866169409538',pixelId:'像素_A001',dailyBudget:'100',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'25',campaignStatus:'1',targetingPackage:'tp1',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH001) · W2A · 销量 · 单日预算 $100 · 广告花费回报目标 · FB-W2A-全回传策略 · 像素_A001',created:'2026-05-20',updated:'2026-06-22'},
-  {id:702,name:'Meta-H5-东南亚',media:'Meta',bizType:'付费',channelName:'通用默认渠道',channelNo:'CH002',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'H5',h5Link:'2088834631521864302',callbackTemplate:'2080641053732810756',pixelId:'像素_B002',dailyBudget:'80',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'registration',attributionSetting:'1d_view',bidAmount:'18',campaignStatus:'0',targetingPackage:'tp4',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'付费 · 通用默认渠道 (CH002) · H5 · 销量 · 单日预算 $80 · 广告花费回报目标 · meta-H5-付费-默认全回传 · 像素_B002',created:'2026-05-22',updated:'2026-06-21'},
-  {id:703,name:'Meta-直投-日韩',media:'Meta',bizType:'付费',channelName:'Meta渠道',channelNo:'CH004',status:'启用',objective:'APP_INSTALLS',objectiveLabel:'应用推广',strategy:'直投',callbackTemplate:'2047700585771171842',dailyBudget:'150',bidStrategy:'bid_cap',resultGoal:'app_event_count',conversionEvent:'install',attributionSetting:'1d_view',bidAmount:'12',campaignStatus:'1',mobileStore:'google_play',app:'netshort',appLink:'https://play.google.com/store/apps/details?id=com.netshort',targetingPackage:'tp3',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'付费 · Meta渠道 (CH004) · 直投 · 应用推广 · 单日预算 $150 · 竞价上限 · Meta-直投-IAA扣量V1.0.0',created:'2026-06-01',updated:'2026-06-23'},
-  {id:704,name:'TikTok-直投-欧美',media:'TikTok',bizType:'免费',channelName:'TikTok通用渠道',channelNo:'CH101',status:'启用',objective:'APP_PROMOTION',objectiveLabel:'应用推广',strategy:'直投',selectApp:'netshort',callbackTemplate:'2079053246685057025',smartCampaign:'已开启',campaignType:'app_install',dailyBudget:'120',campaignStatus:'1',optimizationGoal:'install',bidStrategy:'cost_cap',bidAmount:'12',eventCount:'once',placement:'auto',callToAction:'立即观看',userComments:'0',videoDownload:'0',videoShare:'0',summary:'免费 · TikTok通用渠道 (CH101) · 直投 · 应用推广 · 单日预算 $120 · 成本上限 · FB-直投-全回传策略',created:'2026-06-05',updated:'2026-06-24'},
-  {id:705,name:'Meta-W2A-历史归档',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH003',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079055708355629058',pixelId:'像素_E005',dailyBudget:'60',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'9',campaignStatus:'0',targetingPackage:'tp1',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH003) · W2A · 销量 · 单日预算 $60 · 广告花费回报目标 · FB-W2A-订阅全回传购物最小金额扣2 · 像素_E005',created:'2026-06-08',updated:'2026-06-24'}
+  {id:701,name:'Meta-W2A-美区标准',suffix:'_美区',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH001',status:'启用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079052866169409538',pixelId:'像素_A001',dailyBudget:'100',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'25',campaignStatus:'1',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH001) · W2A · 销量 · 单日预算 $100 · 广告花费回报目标 · FB-W2A-全回传策略 · 像素_A001',created:'2026-05-20',updated:'2026-06-22'},
+  {id:702,name:'Meta-H5-东南亚',suffix:'',media:'Meta',bizType:'付费',channelName:'通用默认渠道',channelNo:'CH002',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'H5',h5Link:'2088834631521864302',callbackTemplate:'2080641053732810756',pixelId:'像素_B002',dailyBudget:'80',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'registration',attributionSetting:'1d_view',bidAmount:'18',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'付费 · 通用默认渠道 (CH002) · H5 · 销量 · 单日预算 $80 · 广告花费回报目标 · meta-H5-付费-默认全回传 · 像素_B002',created:'2026-05-22',updated:'2026-06-21'},
+  {id:703,name:'Meta-直投-日韩',suffix:'_日韩',media:'Meta',bizType:'付费',channelName:'Meta渠道',channelNo:'CH004',status:'启用',objective:'APP_INSTALLS',objectiveLabel:'应用推广',strategy:'直投',callbackTemplate:'2047700585771171842',dailyBudget:'150',bidStrategy:'bid_cap',resultGoal:'app_event_count',conversionEvent:'install',attributionSetting:'1d_view',bidAmount:'12',campaignStatus:'1',mobileStore:'google_play',app:'netshort',appLink:'https://play.google.com/store/apps/details?id=com.netshort',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'付费 · Meta渠道 (CH004) · 直投 · 应用推广 · 单日预算 $150 · 竞价上限 · Meta-直投-IAA扣量V1.0.0',created:'2026-06-01',updated:'2026-06-23'},
+  {id:704,name:'TikTok-直投-欧美',suffix:'_欧美',media:'TikTok',bizType:'免费',channelName:'TikTok通用渠道',channelNo:'CH101',status:'启用',objective:'APP_PROMOTION',objectiveLabel:'应用推广',strategy:'直投',selectApp:'netshort',callbackTemplate:'2079053246685057025',smartCampaign:'已开启',campaignType:'app_install',dailyBudget:'120',campaignStatus:'1',optimizationGoal:'install',bidStrategy:'cost_cap',bidAmount:'12',eventCount:'once',placement:'auto',callToAction:'立即观看',userComments:'0',videoDownload:'0',videoShare:'0',summary:'免费 · TikTok通用渠道 (CH101) · 直投 · 应用推广 · 单日预算 $120 · 成本上限 · FB-直投-全回传策略',created:'2026-06-05',updated:'2026-06-24'},
+  {id:705,name:'Meta-W2A-历史归档',suffix:'_归档',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH003',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079055708355629058',pixelId:'像素_E005',dailyBudget:'60',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'9',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH003) · W2A · 销量 · 单日预算 $60 · 广告花费回报目标 · FB-W2A-订阅全回传购物最小金额扣2 · 像素_E005',created:'2026-06-08',updated:'2026-06-24'}
 ];
 
 // ==================== 素材包（媒体无关） ====================
@@ -1426,7 +1623,7 @@ const PKG_CONF={
   account:{type:'account',body:'accountPackageTableBody',pagination:'accountPackagePagination',label:'账户包',hasMedia:true,list:()=>mockAccountPackages},
   material:{type:'material',body:'materialPackageTableBody',pagination:'materialPackagePagination',label:'素材包',hasMedia:false,list:()=>mockMaterialPackages},
   drama:{type:'drama',body:'dramaPackageTableBody',pagination:'dramaPackagePagination',label:'短剧包',hasMedia:false,list:()=>mockDramaPackages},
-  media:{type:'media',body:'mediaPackageTableBody',pagination:'mediaPackagePagination',label:'投放策略包',hasMedia:true,list:()=>mockMediaPackages},
+  media:{type:'media',body:'mediaPackageTableBody',pagination:'mediaPackagePagination',label:'投放策略包',hasMedia:true,hasSuffix:true,list:()=>mockMediaPackages},
 };
 const PKG_ALL_KEYS=['dramaPkgId','materialPkgId','mediaPkgId','accountPkgId'];
 const PKG_TYPE_OF={dramaPkgId:'drama',materialPkgId:'material',mediaPkgId:'media',accountPkgId:'account'};
@@ -2504,6 +2701,7 @@ document.getElementById('autoTaskForm').addEventListener('submit',function(e){e.
   if(accountCount&&accountCount<1){alert('每轮账户数不能小于1');return}
   const formData={taskName,status:document.querySelector('.btn-option[data-status].active').dataset.status,
     timeRanges:Array.from(document.querySelectorAll('#timeRangeContainer .time-range-group')).map(r=>({start:r.querySelectorAll('.time-input')[0].value,end:r.querySelectorAll('.time-input')[1].value})),
+    effectiveDates:{start:effectiveDate.start,end:effectiveDate.end,weekdays:ED_WEEK.filter(w=>effectiveDate.weekdays.has(w.v)).map(w=>w.v)},
     executeFrequency,
     mediaRows:completeMediaRows().map(r=>({media:r.media,mediaPkgId:+r.mediaPkgId,accountPkgId:+r.accountPkgId})),
     dramaPkgIds:dramaIds,materialPkgIds:materialIds,
@@ -2637,17 +2835,69 @@ function resetTaskFilter(){
   toggleBidParam();applyTaskFilter();
 }
 
+// ===== 媒体渠道拆分 =====
+// 媒体来源优先级：任务在引用的媒体行 → 任务旧单值字段 → 兜底 Meta
+// 选框 filterKey 为 null 表示该页筛选栏尚未接入数据，只做渠道切换
+const CHANNEL_DEFAULT='Meta';
+function channelOfTask(t,id){return (t&&t.mediaRows||[]).find(r=>String(r.mediaPkgId)===String(id))||(t&&t.mediaRows||[])[0]||null}
+function taskMediaByMediaPkg(id){const t=autoTasks.find(x=>(x.mediaRows||[]).some(r=>String(r.mediaPkgId)===String(id)));return t?channelOfTask(t,id).media:null}
+function mediaOfTask(t){const r=(t&&t.mediaRows||[])[0];if(r)return r.media;return t&&t.mediaPkgId?taskMediaByMediaPkg(t.mediaPkgId):null}
+function deriveMedia(t,id){return taskMediaByMediaPkg(id)||mediaOfTask(t)||CHANNEL_DEFAULT}
+function mediaLabel(m){return m===CHANNEL_DEFAULT?'Meta':'TikTok'}
+const CHANNELS=['Meta','TikTok'];
+const CHANNEL_SEL={campaign:CHANNELS[0],adgroup:CHANNELS[0],ad:CHANNELS[0]};
+const CHANNEL_ROWS={},CHANNEL_FILTERED={};
+const campFilter={taskId:'campFilterTaskId',status:'campFilterStatus',account:'campFilterAccount',start:'campFilterStart',end:'campFilterEnd',extra:[{id:'campFilterTaskName',field:'name'},{id:'campFilterCampaignId',field:'campaignId'},{id:'campFilterName',field:'name'}]};
+const agFilter={taskId:'agFilterTaskId',status:'agFilterStatus',account:'agFilterAccount',start:'agFilterStart',end:'agFilterEnd',extra:[{id:'agFilterTaskName',field:'name'},{id:'agFilterSeriesId',field:'uploadSeriesId'},{id:'agFilterSeriesName',field:'name'},{id:'agFilterAdgroupId',field:'name'},{id:'agFilterName',field:'name'}]};
+const adFilter={taskId:'adFilterTaskId',status:'adFilterStatus',account:'adFilterAccount',start:'adFilterStart',end:'adFilterEnd',extra:[{id:'adFilterAdgroupId',field:'uploadAdgroupId'},{id:'adFilterAdGroup',field:'adgroupId'}]};
+const CHANNEL_FILTERS={campaign:campFilter,adgroup:agFilter,ad:adFilter};
+function renderChannelBar(barId,key){
+  const all=CHANNEL_ROWS[key],cur=CHANNEL_SEL[key];
+  document.getElementById(barId).innerHTML=CHANNELS.map(m=>{
+    const n=all.filter(r=>r.media===m).length;
+    return `<button type="button" class="channel-tab${m===cur?' active':''}" data-media="${m}" onclick="switchChannel('${key}','${m}')">${mediaLabel(m)} <span class="channel-count">${n}</span></button>`;
+  }).join('');
+}
+function switchChannel(key,media){CHANNEL_SEL[key]=media;renderChannelList(key)}
+function applyChannelFilter(key){
+  const f=CHANNEL_FILTERS[key];if(!f)return;
+  const v=id=>document.getElementById(id).value.trim();
+  CHANNEL_FILTERED[key]=CHANNEL_ROWS[key].filter(r=>
+    (!f.taskId||String(r.taskId).includes(v(f.taskId)))
+    &&(!f.status||r.status===document.getElementById(f.status).value)
+    &&(!f.account||(r.accountName||'').includes(v(f.account)))
+    &&(!f.start||r.created>=v(f.start))
+    &&(!f.end||r.created<=v(f.end))
+    &&(f.extra||[]).every(x=>!v(x.id)||String(r[x.field]||'').includes(v(x.id)))
+  );
+}
+function resetChannelFilter(key){
+  const f=CHANNEL_FILTERS[key];if(!f)return;
+  [f.taskId,f.status,f.account,f.start,f.end].concat(f.extra.map(x=>x.id)).forEach(i=>{if(i)document.getElementById(i).value=''});
+  applyChannelFilter(key);
+}
+function applyCampaignFilter(){applyChannelFilter('campaign');renderCampaigns(1)}
+function resetCampaignFilter(){resetChannelFilter('campaign');renderCampaigns(1)}
+function applyAdgroupFilter(){applyChannelFilter('adgroup');renderAdGroups(1)}
+function resetAdgroupFilter(){resetChannelFilter('adgroup');renderAdGroups(1)}
+function applyAdFilter(){applyChannelFilter('ad');renderAds(1)}
+function resetAdFilter(){resetChannelFilter('ad');renderAds(1)}
+function rowsOfChannel(key){return (CHANNEL_FILTERED[key]||CHANNEL_ROWS[key]).filter(r=>r.media===CHANNEL_SEL[key])}
+function renderChannelList(key){
+  if(key==='campaign')renderCampaigns(1);else if(key==='adgroup')renderAdGroups(1);else renderAds(1);
+}
+
 // 广告系列
-const campaigns=Array.from({length:80},(_,i)=>{const drama=mockDramas[i%8],t=autoTasks[i%autoTasks.length],pkg=findPkg('account',t.accountPkgId),mp=findPkg('media',t.mediaPkgId),strategies=['转化价值最大化','广告花费回报目标','销量'];return{id:1000+i,taskId:t.id,campaignId:`C2026${String(i+1).padStart(5,'0')}`,name:`${drama}-系列_${String(i+1).padStart(3,'0')}`,accountName:pkg.name,accountId:`A${String(i+100).padStart(5,'0')}`,scriptNo:`SC${String(i+1).padStart(5,'0')}`,scriptName:`${drama}`,channelName:mp.channelName,channelNo:mp.channelNo,uploadStatus:Math.random()>.3?'上传成功':'上传失败',status:Math.random()>.3?'已开启':'已关闭',bidStrategy:strategies[Math.floor(Math.random()*3)],dailyBudget:`$${Math.floor(Math.random()*500+50)}`,optimization:mockOptimizations[Math.floor(Math.random()*3)],failReason:Math.random()>.7?'网络超时':'',drama,linkName:`${drama}_Link`,template:(mockCallbackPlans.find(p=>String(p.id)===String(mp.callbackTemplate))||{}).name||'回传模板',created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
-function renderCampaigns(p=1){renderTable('campaignTableBody',campaigns,['id','taskId',{key:'campaignId',render:r=>`<span class="col-id">${r.campaignId}</span>`},'name','accountName','accountId','scriptNo','scriptName','drama','channelName','channelNo',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':'error'}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'bidStrategy','dailyBudget','optimization','failReason','linkName','template','created','updated'],10,[{label:'重试'}],p);renderPagination('campaignPagination',campaigns.length,10,p=>renderCampaigns(p),p);syncBatchCounts()}
+const campaigns=Array.from({length:80},(_,i)=>{const drama=mockDramas[i%8],t=autoTasks[i%autoTasks.length],row=(t.mediaRows||[])[0]||{},pkg=findPkg('account',row.accountPkgId),mp=findPkg('media',row.mediaPkgId)||findPkg('media',t.mediaPkgId),strategies=['转化价值最大化','广告花费回报目标','销量'];return{id:1000+i,taskId:t.id,media:deriveMedia(t,row.mediaPkgId),campaignId:`C2026${String(i+1).padStart(5,'0')}`,name:`${drama}-系列_${String(i+1).padStart(3,'0')}`,accountName:pkg.name,accountId:`A${String(i+100).padStart(5,'0')}`,scriptNo:`SC${String(i+1).padStart(5,'0')}`,scriptName:`${drama}`,channelName:mp.channelName,channelNo:mp.channelNo,uploadStatus:Math.random()>.3?'上传成功':'上传失败',status:Math.random()>.3?'已开启':'已关闭',bidStrategy:strategies[Math.floor(Math.random()*3)],dailyBudget:`$${Math.floor(Math.random()*500+50)}`,optimization:mockOptimizations[Math.floor(Math.random()*3)],failReason:Math.random()>.7?'网络超时':'',drama,linkName:`${drama}_Link`,template:(mockCallbackPlans.find(p=>String(p.id)===String(mp.callbackTemplate))||{}).name||'回传模板',created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
+function renderCampaigns(p=1){CHANNEL_ROWS.campaign=campaigns;const list=rowsOfChannel('campaign');renderTable('campaignTableBody',list,['id','taskId',{key:'media',render:r=>mediaLabel(r.media)},{key:'campaignId',render:r=>`<span class="col-id">${r.campaignId}</span>`},'name','accountName','accountId','scriptNo','scriptName','drama','channelName','channelNo',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':'error'}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'bidStrategy','dailyBudget','optimization','failReason','linkName','template','created','updated'],10,[{label:'重试'}],p);renderPagination('campaignPagination',list.length,10,renderCampaigns,p);renderChannelBar('campaignChannelBar','campaign');syncBatchCounts()}
 
 // 广告组
-const adGroups=Array.from({length:80},(_,i)=>{const drama=mockDramas[i%8],lang=mockLangs[i%7],pkg=mockAccountPackages[i%8];return{id:2000+i,taskId:autoTasks[i%autoTasks.length].id,uploadSeriesId:`C2026${String(i%20+1).padStart(5,'0')}`,name:`${drama}-${lang}-G${String(i+1).padStart(3,'0')}`,accountInfo:pkg.name,drama:`${drama}-${lang}`,uploadStatus:Math.random()>.3?'上传成功':'上传失败',status:Math.random()>.3?'已开启':'已关闭',targeting:mockTargetingPackages[i%5],failReason:Math.random()>.7?'图片尺寸不符':'',optimization:mockOptimizations[Math.floor(Math.random()*3)],created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
-function renderAdGroups(p=1){renderTable('adgroupTableBody',adGroups,['id','taskId','uploadSeriesId','name','accountInfo','drama',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':'error'}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'targeting','failReason','optimization','created','updated'],10,[{label:'重试'}],p);renderPagination('adgroupPagination',adGroups.length,10,p=>renderAdGroups(p),p);syncBatchCounts()}
+const adGroups=Array.from({length:80},(_,i)=>{const drama=mockDramas[i%8],lang=mockLangs[i%7],t=autoTasks[i%autoTasks.length],row=(t.mediaRows||[])[0]||{},pkg=mockAccountPackages[i%8];return{id:2000+i,taskId:t.id,media:deriveMedia(t,row.mediaPkgId),uploadSeriesId:`C2026${String(i%20+1).padStart(5,'0')}`,name:`${drama}-${lang}-G${String(i+1).padStart(3,'0')}`,accountInfo:pkg.name,accountName:pkg.name,drama:`${drama}-${lang}`,uploadStatus:Math.random()>.3?'上传成功':'上传失败',status:Math.random()>.3?'已开启':'已关闭',targeting:mockTargetingPackages[i%5],failReason:Math.random()>.7?'图片尺寸不符':'',optimization:mockOptimizations[Math.floor(Math.random()*3)],created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
+function renderAdGroups(p=1){CHANNEL_ROWS.adgroup=adGroups;const list=rowsOfChannel('adgroup');renderTable('adgroupTableBody',list,['id','taskId',{key:'media',render:r=>mediaLabel(r.media)},'uploadSeriesId','name','accountInfo','drama',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':'error'}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'targeting','failReason','optimization','created','updated'],10,[{label:'重试'}],p);renderPagination('adgroupPagination',list.length,10,renderAdGroups,p);renderChannelBar('adgroupChannelBar','adgroup');syncBatchCounts()}
 
 // 广告
-const adsList=Array.from({length:80},(_,i)=>{const pkg=mockAccountPackages[i%8];return{id:3000+i,taskId:autoTasks[i%autoTasks.length].id,campaignId:`C2026${String(i%20+1).padStart(5,'0')}`,adgroupId:`AG${String(i%20+1).padStart(6,'0')}`,uploadAdgroupId:`AG${String(i%20+1).padStart(6,'0')}`,adId:`AD${String(i+1).padStart(7,'0')}`,accountName:pkg.name,accountId:`A${String(i+100).padStart(5,'0')}`,uploadStatus:Math.random()>.2?'上传成功':(Math.random()>.5?'待上传':'上传失败'),status:Math.random()>.3?'已开启':'已关闭',multiAdvertiser:Math.random()>.7?'是':'否',failReason:Math.random()>.8?'视频时长超限':'',material:mockMaterialData[i%12].name,created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*7)).padStart(2,'0')}`}});
-function renderAds(p=1){renderTable('adTableBody',adsList,['id','taskId','campaignId','adgroupId','uploadAdgroupId','adId','accountName','accountId',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':(r.uploadStatus==='上传失败'?'error':'pending')}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'multiAdvertiser','failReason','material','created','updated'],10,[{label:'重试'}],p);renderPagination('adPagination',adsList.length,10,p=>renderAds(p),p);syncBatchCounts()}
+const adsList=Array.from({length:80},(_,i)=>{const t=autoTasks[i%autoTasks.length],row=(t.mediaRows||[])[0]||{},pkg=mockAccountPackages[i%8];return{id:3000+i,taskId:t.id,media:deriveMedia(t,row.mediaPkgId),campaignId:`C2026${String(i%20+1).padStart(5,'0')}`,adgroupId:`AG${String(i%20+1).padStart(6,'0')}`,uploadAdgroupId:`AG${String(i%20+1).padStart(6,'0')}`,adId:`AD${String(i+1).padStart(7,'0')}`,accountName:pkg.name,accountId:`A${String(i+100).padStart(5,'0')}`,uploadStatus:Math.random()>.2?'上传成功':(Math.random()>.5?'待上传':'上传失败'),status:Math.random()>.3?'已开启':'已关闭',multiAdvertiser:Math.random()>.7?'是':'否',failReason:Math.random()>.8?'视频时长超限':'',material:mockMaterialData[i%12].name,created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*7)).padStart(2,'0')}`}});
+function renderAds(p=1){CHANNEL_ROWS.ad=adsList;const list=rowsOfChannel('ad');renderTable('adTableBody',list,['id','taskId',{key:'media',render:r=>mediaLabel(r.media)},'campaignId','adgroupId','uploadAdgroupId','adId','accountName','accountId',{key:'uploadStatus',render:r=>`<span class="col-status ${r.uploadStatus==='上传成功'?'running':(r.uploadStatus==='上传失败'?'error':'pending')}">${r.uploadStatus}</span>`},{key:'status',render:r=>`<span class="col-status ${r.status==='已开启'?'running':'stopped'}">${r.status}</span>`},'multiAdvertiser','failReason','material','created','updated'],10,[{label:'重试'}],p);renderPagination('adPagination',list.length,10,renderAds,p);renderChannelBar('adChannelBar','ad');syncBatchCounts()}
 
 // ===== 广告系列/广告组/广告 批量选中重试 =====
 document.querySelectorAll('.table-batch-bar').forEach(function(bar){
@@ -2814,6 +3064,9 @@ function openPkgDrawer(type,id){
   document.getElementById('pkgDrawerTitle').textContent=(p?'编辑':'新增')+PKG_TYPE_LABEL[type];
   document.getElementById('pkgName').value=p?p.name:'';
   document.getElementById('pkgNameCount').textContent=(p?p.name:'').length+' / 50';
+  document.getElementById('pkgSuffixItem').style.display=PKG_CONF[type].hasSuffix?'flex':'none';
+  document.getElementById('pkgSuffix').value=(p&&p.suffix)||'';
+  document.getElementById('pkgSuffixCount').textContent=((p&&p.suffix)||'').length+' / 10';
   document.getElementById('pkgMediaItem').style.display=PKG_CONF[type].hasMedia?'flex':'none';
   document.getElementById('pkgMedia').value=(p&&p.media)?p.media:'';
   pkgBodyEls().forEach(el=>el.style.display='none');
@@ -3063,10 +3316,7 @@ const MP_CHANNELS={
           MP_CALLBACK
         ],
         campaign:[...MP_META_CAMPAIGN],
-        adGroup:[
-          ...MP_META_APP_GROUP,
-          f('targetingPackage','定向包','select',mockTargetingPackages.map(t=>({v:t.id,label:t.name})),{placeholder:'选择定向包'})
-        ],
+        adGroup:[...MP_META_APP_GROUP],
         ad:[...MP_META_AD],
         afterChange({root}){mpMetaAfterChange(this,root)}
       },
@@ -3074,9 +3324,7 @@ const MP_CHANNELS={
         label:'销量',
         account:[...MP_BIZ,MP_SALES_STRATEGY,MP_H5_LINK,MP_CALLBACK,MP_PIXEL],
         campaign:[...MP_META_CAMPAIGN],
-        adGroup:[
-          f('targetingPackage','定向包','select',mockTargetingPackages.map(t=>({v:t.id,label:t.name})),{placeholder:'选择定向包'})
-        ],
+        adGroup:[],
         ad:[...MP_META_AD],
         afterChange({root}){mpMetaAfterChange(this,root)}
       }
@@ -3112,8 +3360,7 @@ const MP_CHANNELS={
           f('bidAmount','出价','money','',{required:true,showWhen:['bidStrategy','cost_cap','max_conversion'],placeholder:'请输入出价'}),
           f('eventCount','事件统计方式','btn-group',{仅一次:'once',每一次:'every'},{defaultValue:'once'}),
           f('placement','版位','btn-group',{自动版位:'auto',指定版位:'manual'},{required:true,defaultValue:'auto'}),
-          f('manualPlacement','指定版位','checkbox-group',[{v:'tiktok',label:'TikTok'},{v:'pangle',label:'Pangle'}],{showWhen:['placement','manual']}),
-          f('targetingPackage','定向包','select',mockTargetingPackages.map(t=>({v:t.id,label:t.name})),{placeholder:'选择定向包',hideWhen:['productSource','1']})
+          f('manualPlacement','指定版位','checkbox-group',[{v:'tiktok',label:'TikTok'},{v:'pangle',label:'Pangle'}],{showWhen:['placement','manual']})
         ],
         afterChange({root}){
           const g=Field.collect(mpFind(this,'optimizationGoal'),root);
@@ -3159,8 +3406,7 @@ const MP_CHANNELS={
           f('bidAmount','出价','money','',{required:true,showWhen:['bidStrategy','cost_cap'],placeholder:'请输入出价'}),
           f('eventCount','事件统计方式','btn-group',{仅一次:'once',每一次:'every'},{defaultValue:'once'}),
           f('placement','版位','btn-group',{自动版位:'auto',指定版位:'manual'},{required:true,defaultValue:'auto'}),
-          f('manualPlacement','指定版位','checkbox-group',[{v:'tiktok',label:'TikTok'},{v:'pangle',label:'Pangle'}],{showWhen:['placement','manual']}),
-          f('targetingPackage','定向包','select',mockTargetingPackages.map(t=>({v:t.id,label:t.name})),{placeholder:'选择定向包',hideWhen:['productSource','1']})
+          f('manualPlacement','指定版位','checkbox-group',[{v:'tiktok',label:'TikTok'},{v:'pangle',label:'Pangle'}],{showWhen:['placement','manual']})
         ],
         ad:[
           f('callToAction','行动号召','static','立即观看'),
@@ -3524,6 +3770,7 @@ function submitPkgDrawer(){
     if(!media){alert('请选择媒体');return}
     data.media=media;
   }
+  if(PKG_CONF[type].hasSuffix)data.suffix=document.getElementById('pkgSuffix').value.trim();
   if(type==='material'){
     data.mode=materialMode;
     data.adCount=document.getElementById('adCount').value||30;
@@ -3626,6 +3873,7 @@ function openPkgView(type,id){
   document.getElementById('pkgViewBody').innerHTML=
     `<div class="form-item"><label>状态</label><div class="readonly-value">${p.status}</div></div>`+
     (p.media?`<div class="form-item"><label>媒体</label><div class="readonly-value">${p.media}</div></div>`:'')+
+    (PKG_CONF[type].hasSuffix?`<div class="form-item"><label>广告系列名称后缀</label><div class="readonly-value">${p.suffix||'-'}</div></div>`:'')+
     (type==='account'?`<div class="form-item"><label>账户名单</label><div class="readonly-value">${p.accounts.length} 个账户</div></div>`+
       (p.media==='Meta'?`<div class="form-item"><label>收益方/赞助方</label><div class="readonly-value">${apPartyText(p)}</div></div>`:'')
       :`<div class="form-item"><label>规则摘要</label><div class="readonly-value">${p.summary||'-'}</div></div>`)+
@@ -3673,9 +3921,10 @@ document.querySelectorAll('.check-group').forEach(g=>g.addEventListener('change'
   const l=e.target.closest('label');if(l)l.classList.toggle('checked',l.querySelector('input').checked);
 }));
 document.getElementById('pkgName').addEventListener('input',function(){document.getElementById('pkgNameCount').textContent=this.value.length+' / 50'});
+document.getElementById('pkgSuffix').addEventListener('input',function(){document.getElementById('pkgSuffixCount').textContent=this.value.length+' / 10'});
 
 // ==================== 初始化 ====================
-initTaskFilterOptions();refreshTaskPkgOptions();refreshDramaTargetingOptions();applyTaskFilter();renderAllPkgPages();renderTargetingPackages();renderCampaigns();renderAdGroups();renderAds();
+initTaskFilterOptions();refreshTaskPkgOptions();refreshDramaTargetingOptions();applyTaskFilter();renderAllPkgPages();renderTargetingPackages();renderCampaigns();renderAdGroups();renderAds();renderEffectiveDate();
 </script>
 </body>
 </html>
