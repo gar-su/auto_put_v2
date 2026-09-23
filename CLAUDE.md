@@ -127,7 +127,7 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 包表单由**媒体 × 广告目标**两级决定（`MP_CHANNELS`），四种组合字段集互不相同，分桶 `['account','campaign','adGroup','ad']`。改字段先读 `MP_CHANNELS` 与 `mpRefresh` / `mpCollect` / `mpValidate`，条件显隐走 `showWhen` / `hideWhen`（支持 `['字段','值']` 与 `['字段','v1','v2']` 两种写法，由 `condHit` 解析）。
 **投放策略包不含定向包字段**——定向包跟着短剧包走，由短剧包按圈剧语言分行分配（见「短剧包」一节）。历史上 MP 的「广告组设置」里曾有一个 `targetingPackage` 下拉，已移除，**不要加回来**：定向包是媒体级且与语种绑定的，塞进策略包会与短剧包的语种行重复建模。移除后 Meta/销量的 `adGroup` 为空数组，分组标题靠 `renderMpSchema` 里的 `fs.length?...:''` 自动不渲染，不是 bug。
 `mockMediaPackages[].strategy` 是字符串 `'W2A' | 'H5' | '直投'`，而 `mockCallbackPlans[].strategy` 是数字 `1/2/4`，靠 `MP_STRATEGY_CODE` 换算。回传模板按 strategy × businessType 过滤，H5 链接（`mockMonitorLinks`）固定取 `strategy===4`。
-TikTok 商品数据源开启后有商品对齐抽屉（`openProductLibraryDrawer`，三栏，`pl*` 前缀）。
+**TikTok 商品库本期已隐藏**（`商品数据源` 与 `关联商品投放` 两个字段注释在 `MP_CHANNELS` 的 TikTok 两个广告目标里，`mpRefresh` 的关联清空段与 `openProductLibraryDrawer` 入口一并停用）。抽屉标记、`mockProductAccounts`、`pl*` 函数套件全部原样保留但不可达——恢复时搜 `暂不支持·TikTok商品库` 逐处取消注释即可，别直接删。
 
 ## 已知重复定义
 

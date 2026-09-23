@@ -3344,8 +3344,9 @@ const MP_CHANNELS={
           f('smartCampaign','Smart+ 推广系列','static','已开启'),
           f('campaignType','推广系列类型','btn-group',{应用安装:'app_install',应用再营销:'app_retargeting','TikTok Minis':'tiktok_minis'},{required:true,defaultValue:'app_install'}),
           f('selectMiniProgram','选择小程序','select',[{v:'7623607732641417217',label:'TT_ZeroDrama'},{v:'7644122628625598471',label:'TT_FishDrama'}],{required:true,showWhen:['campaignType','tiktok_minis']}),
-          f('productSource','商品数据源','btn-group',{关闭:'0',开启:'1'},{showWhen:['campaignType','tiktok_minis'],defaultValue:'0'}),
-          f('productLibrary','关联商品投放','link',{text:'关联商品投放',action:'openProductLibraryDrawer()'},{showWhen:['productSource','1']}),
+          // [暂不支持·TikTok商品库] 本期隐藏，后续需要时取消注释即可恢复
+          // f('productSource','商品数据源','btn-group',{关闭:'0',开启:'1'},{showWhen:['campaignType','tiktok_minis'],defaultValue:'0'}),
+          // f('productLibrary','关联商品投放','link',{text:'关联商品投放',action:'openProductLibraryDrawer()'},{showWhen:['productSource','1']}),
           f('paidTemplateGroup','付费模板组','select',mockPaidTemplateGroups.map(g=>({v:g,label:g})),{required:true,showWhen:['campaignType','tiktok_minis'],placeholder:'请选择付费模板组'}),
           f('freeTemplateGroup','免费广告策略模板','select',mockFreeTemplateGroups.map(g=>({v:g,label:g})),{required:true,showWhen:['campaignType','tiktok_minis'],placeholder:'请选择免费广告策略模板'}),
           f('dailyBudget','单日预算额度','money','',{required:true,placeholder:'请输入预算额度'}),
@@ -3393,8 +3394,9 @@ const MP_CHANNELS={
         account:[...MP_BIZ,MP_SALES_STRATEGY,MP_H5_LINK,MP_CALLBACK,MP_PIXEL],
         campaign:[
           f('smartCampaign','Smart+ 推广系列','static','已开启'),
-          f('productSource','商品数据源','btn-group',{关闭:'0',开启:'1'},{defaultValue:'0'}),
-          f('productLibrary','关联商品投放','link',{text:'关联商品投放',action:'openProductLibraryDrawer()'},{showWhen:['productSource','1']}),
+          // [暂不支持·TikTok商品库] 本期隐藏，后续需要时取消注释即可恢复
+          // f('productSource','商品数据源','btn-group',{关闭:'0',开启:'1'},{defaultValue:'0'}),
+          // f('productLibrary','关联商品投放','link',{text:'关联商品投放',action:'openProductLibraryDrawer()'},{showWhen:['productSource','1']}),
           f('dailyBudget','单日预算额度','money','',{required:true,placeholder:'请输入预算额度'}),
           f('campaignStatus','广告系列状态','btn-group',{启用:'1',暂停:'0'},{required:true,defaultValue:'0'})
         ],
@@ -3486,10 +3488,11 @@ function mpRefresh(def,root){
     const val=Field.collect(mpFind(def,fd.showWhen[0]),root);
     mpToggle(root,fd.key,condHit(fd.showWhen,val));
   });
+  // [暂不支持·TikTok商品库] 本期隐藏，后续需要时取消注释即可恢复
   // 商品对齐：数据源关闭时清空关联，标签随包内容重绘
-  const psFd=mpFind(def,'productSource');
-  if(psFd&&Field.collect(psFd,root)!=='1'&&Object.keys(plMatches).length){plMatches={};plChecked.clear()}
-  plRenderSelected();
+  // const psFd=mpFind(def,'productSource');
+  // if(psFd&&Field.collect(psFd,root)!=='1'&&Object.keys(plMatches).length){plMatches={};plChecked.clear()}
+  // plRenderSelected();
   if(def.afterChange)def.afterChange({root});
 }
 function renderMpObjectiveBtns(){
@@ -3571,6 +3574,8 @@ function plGenerateTargeting(product,lib){
   return {id:'auto_'+product.productId,name:'定向-'+product.seriesName,type:'auto',language:lng,region:lib.region,desc:parts.join(' | ')||'自动定向'};
 }
 function openProductLibraryDrawer(){
+  // [暂不支持·TikTok商品库] 本期隐藏，后续需要时删除本行即可恢复
+  return;
   const dramas=plDramas();
   if(!dramas.length){alert('当前短剧包内没有已上线短剧');return}
   document.getElementById('productLibraryDrawer').style.display='flex';
