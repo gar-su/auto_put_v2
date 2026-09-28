@@ -1133,20 +1133,20 @@ tr.unit-row:hover>td{background:#f5f7fa}
       <!-- /filterModeFields -->
 
       <div class="form-item">
-        <label>素材单轮投放次数</label>
+        <label>素材单轮投放次数<i class="tip-icon">?<span class="tip-box">单个素材在单轮投放中最多进入几个系列，跨账户合计。</span></i></label>
         <div class="form-control"><div class="btn-group" id="singleRoundRepeatType">
-          <button type="button" class="btn-option" data-type="unlimit">不限</button>
-          <button type="button" class="btn-option active" data-type="custom">自定义</button>
+          <button type="button" class="btn-option active" data-type="unlimit">上限</button>
+          <button type="button" class="btn-option" data-type="custom">自定义</button>
         </div>
-        <div class="input-group" id="singleRoundRepeatInput"><input type="number" class="input-text" id="singleRoundRepeat" min="1" value="1" placeholder="请输入"><span class="tip-text">单轮最多进入几个系列（跨账户合计）</span></div></div>
+        <div class="input-group" id="singleRoundRepeatInput" style="display:none"><input type="number" class="input-text" id="singleRoundRepeat" min="1" max="3" value="1" placeholder="请输入"><span class="tip-text">单轮最多进入几个系列（跨账户合计），1-3</span></div></div>
       </div>
       <div class="form-item">
-        <label>素材累计投放次数</label>
+        <label>素材累计投放次数<i class="tip-icon">?<span class="tip-box">单个素材累计投放满该次数后退出投放，跨轮跨账户累计。</span></i></label>
         <div class="form-control"><div class="btn-group" id="totalRepeatType">
-          <button type="button" class="btn-option" data-type="unlimit">不限</button>
-          <button type="button" class="btn-option active" data-type="custom">自定义</button>
+          <button type="button" class="btn-option active" data-type="unlimit">上限</button>
+          <button type="button" class="btn-option" data-type="custom">自定义</button>
         </div>
-        <div class="input-group" id="totalRepeatInput"><input type="number" class="input-text" id="totalRepeatCount" min="1" value="1" placeholder="请输入"><span class="tip-text">累计投满即退出（跨轮跨账户）</span></div></div>
+        <div class="input-group" id="totalRepeatInput" style="display:none"><input type="number" class="input-text" id="totalRepeatCount" min="1" max="10" value="1" placeholder="请输入"><span class="tip-text">累计投满即退出（跨轮跨账户），1-10</span></div></div>
       </div>
       <div class="form-item">
         <label>广告数</label>
@@ -1596,10 +1596,10 @@ const mockMediaPackages=[
 
 // ==================== 素材包（媒体无关） ====================
 const mockMaterialPackages=[
-  {id:801,name:'近7天-消耗≥100-高达标',status:'启用',mode:'filter',filterType:'custom',createTime:'7',singleRoundRepeat:'2',totalRepeatCount:'3',adCount:'30',summary:'筛选 · 7天 · 消耗≥100 · 综合达标率≥5 · 单轮2×累计3 · 广告数30',created:'2026-05-18',updated:'2026-06-21'},
-  {id:802,name:'近30天-D0ROI≥2',status:'启用',mode:'filter',filterType:'custom',createTime:'30',singleRoundRepeat:'1',totalRepeatCount:'2',adCount:'30',summary:'筛选 · 30天 · DOROI≥2 · 单轮1×累计2 · 广告数30',created:'2026-05-19',updated:'2026-06-20'},
-  {id:803,name:'指定素材-繁花中文',status:'启用',mode:'specify',materialIds:['mat_001','mat_003'],singleRoundRepeat:'1',totalRepeatCount:'1',adCount:'12',summary:'指定素材 · 2 个素材 · 单轮1×累计1 · 广告数12',created:'2026-06-02',updated:'2026-06-23'},
-  {id:804,name:'不限-默认池',status:'停用',mode:'filter',filterType:'unlimit',createTime:'unlimit',singleRoundRepeat:'1',totalRepeatCount:'1',adCount:'30',summary:'筛选 · 不限 · 单轮1×累计1 · 广告数30',created:'2026-06-06',updated:'2026-06-24'},
+  {id:801,name:'近7天-消耗≥100-高达标',status:'启用',mode:'filter',filterType:'custom',createTime:'7',singleRoundRepeat:'2',totalRepeatCount:'3',singleRoundRepeatType:'custom',totalRepeatType:'custom',adCount:'30',summary:'筛选 · 7天 · 消耗≥100 · 综合达标率≥5 · 单轮2×累计3 · 广告数30',created:'2026-05-18',updated:'2026-06-21'},
+  {id:802,name:'近30天-D0ROI≥2',status:'启用',mode:'filter',filterType:'custom',createTime:'30',singleRoundRepeat:'1',totalRepeatCount:'2',singleRoundRepeatType:'custom',totalRepeatType:'custom',adCount:'30',summary:'筛选 · 30天 · DOROI≥2 · 单轮1×累计2 · 广告数30',created:'2026-05-19',updated:'2026-06-20'},
+  {id:803,name:'指定素材-繁花中文',status:'启用',mode:'specify',materialIds:['mat_001','mat_003'],singleRoundRepeat:'1',totalRepeatCount:'1',singleRoundRepeatType:'custom',totalRepeatType:'custom',adCount:'12',summary:'指定素材 · 2 个素材 · 单轮1×累计1 · 广告数12',created:'2026-06-02',updated:'2026-06-23'},
+  {id:804,name:'不限-默认池',status:'停用',mode:'filter',filterType:'unlimit',createTime:'unlimit',singleRoundRepeat:'1',totalRepeatCount:'1',singleRoundRepeatType:'unlimit',totalRepeatType:'unlimit',adCount:'30',summary:'筛选 · 不限 · 单轮1×累计1 · 广告数30',created:'2026-06-06',updated:'2026-06-24'},
 ];
 
 // ==================== 短剧包（媒体无关） ====================
@@ -3125,8 +3125,8 @@ function initMaterialPkg(p){
   setBtnGroup('#materialCreateTime','day',(p&&p.createTime)||'unlimit');
   setBtnGroup('#materialFilterType','type',(p&&p.filterType)||'unlimit');
   setBtnGroup('#materialCountType','type','unlimit');
-  setBtnGroup('#singleRoundRepeatType','type','custom');
-  setBtnGroup('#totalRepeatType','type','custom');
+  setBtnGroup('#singleRoundRepeatType','type',(p&&p.singleRoundRepeatType)||'unlimit');
+  setBtnGroup('#totalRepeatType','type',(p&&p.totalRepeatType)||'unlimit');
   document.getElementById('singleRoundRepeat').value=(p&&p.singleRoundRepeat)||1;
   document.getElementById('totalRepeatCount').value=(p&&p.totalRepeatCount)||1;
   document.getElementById('adCount').value=(p&&p.adCount)||'';
@@ -3779,12 +3779,23 @@ function submitPkgDrawer(){
   if(type==='material'){
     data.mode=materialMode;
     data.adCount=document.getElementById('adCount').value||30;
-    data.singleRoundRepeat=document.getElementById('singleRoundRepeat').value||1;
-    data.totalRepeatCount=document.getElementById('totalRepeatCount').value||1;
+    data.singleRoundRepeatType=btnVal('#singleRoundRepeatType','type');
+    data.totalRepeatType=btnVal('#totalRepeatType','type');
+    if(data.singleRoundRepeatType==='custom'){
+      const v=+document.getElementById('singleRoundRepeat').value;
+      if(!(v>=1&&v<=3)){alert('素材单轮投放次数需为 1-3');return}
+      data.singleRoundRepeat=String(v);
+    }else data.singleRoundRepeat='unlimit';
+    if(data.totalRepeatType==='custom'){
+      const v=+document.getElementById('totalRepeatCount').value;
+      if(!(v>=1&&v<=10)){alert('素材累计投放次数需为 1-10');return}
+      data.totalRepeatCount=String(v);
+    }else data.totalRepeatCount='unlimit';
+    const repeatText=(data.singleRoundRepeatType==='custom'?`单轮${data.singleRoundRepeat}`:'单轮不限')+'×'+(data.totalRepeatType==='custom'?`累计${data.totalRepeatCount}`:'累计不限');
     if(materialMode==='specify'){
       if(confirmedMaterials.length===0){alert('请至少选择 1 个素材');return}
       data.materialIds=confirmedMaterials.map(m=>m.id);
-      data.summary=`指定素材 · ${confirmedMaterials.length} 个素材 · 单轮${data.singleRoundRepeat}×累计${data.totalRepeatCount} · 广告数${data.adCount}`;
+      data.summary=`指定素材 · ${confirmedMaterials.length} 个素材 · ${repeatText} · 广告数${data.adCount}`;
     }else{
       const filterType=btnVal('#materialFilterType','type');
       if(filterType==='custom'&&document.querySelectorAll('#materialConditionGroup .condition-row').length===0){alert('选择自定义时，至少需要输入一个条件');return}
@@ -3802,7 +3813,7 @@ function submitPkgDrawer(){
       data.businessType=btnVal('#businessTypeBtns','type');
       data.mediaFilter=btnVal('#mediaFilterBtns','type');
       const extra=filterType==='custom'?` · 业务类型${btLabel} · 媒体${mdLabel}`:'';
-      data.summary=`筛选 · ${ct} · ${condText}${extra} · 单轮${data.singleRoundRepeat}×累计${data.totalRepeatCount} · 广告数${data.adCount}`;
+      data.summary=`筛选 · ${ct} · ${condText}${extra} · ${repeatText} · 广告数${data.adCount}`;
     }
   }
   if(type==='drama'){
