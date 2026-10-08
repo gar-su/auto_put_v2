@@ -1229,6 +1229,22 @@ tr.unit-row:hover>td{background:#f5f7fa}
   </div>
 </div>
 
+<!-- ============ 执行历史抽屉（单元级 / 任务级） ============ -->
+<div class="drawer-overlay" id="taskLogDrawer" style="display:none;z-index:1002">
+  <div class="drawer" style="width:720px">
+    <div class="drawer-header"><span id="taskLogTitle">执行历史</span><span class="drawer-close" onclick="closeLogDrawer()">&times;</span></div>
+    <div class="drawer-body" id="taskLogBody"></div>
+    <div class="drawer-footer"><button type="button" class="btn-cancel" onclick="closeLogDrawer()">关闭</button></div>
+  </div>
+</div>
+<div class="drawer-overlay" id="unitLogDrawer" style="display:none;z-index:1003">
+  <div class="drawer" style="width:720px">
+    <div class="drawer-header"><span id="unitLogTitle">单元执行历史</span><span class="drawer-close" onclick="closeLogDrawer()">&times;</span></div>
+    <div class="drawer-body" id="unitLogBody"></div>
+    <div class="drawer-footer"><button type="button" class="btn-cancel" onclick="closeLogDrawer()">关闭</button></div>
+  </div>
+</div>
+
 <!-- ============ 定向包选择侧边栏 ============ -->
 <div class="drawer-overlay" id="targetingDrawer" style="display:none;z-index:1002">
   <div class="drawer">
@@ -2734,22 +2750,77 @@ const autoTasks=Array.from({length:7},(_,i)=>{
   const rows=multi&&mp2&&ap2?[{media:mp.media,mediaPkgId:mp.id,accountPkgId:ap.id},{media:mp2.media,mediaPkgId:mp2.id,accountPkgId:ap2.id}]:[{media:mp.media,mediaPkgId:mp.id,accountPkgId:ap.id}];
   const dIds=multi?okDrama.slice(0,2).map(p=>p.id):[(bad?mockDramaPackages.find(p=>p.status==='停用'):pick(okDrama,i)).id];
   const mIds=multi?okMaterial.slice(0,2).map(p=>p.id):[(bad?mockMaterialPackages.find(p=>p.status==='停用'):pick(okMaterial,i)).id];
-  return{id:1571+i,name:`${user}-${time}-${lang}`,status:Math.random()>.9?'停用':'启用',bidStrategy:strategies[Math.floor(Math.random()*4)],dailyBudget:`$${Math.floor(Math.random()*500+50)}`,interval:Math.floor(Math.random()*30+5),optimization:mockOptimizations[Math.floor(Math.random()*3)],target:i%2?'免费':'付费',dramaPkgId:dIds[0],materialPkgId:mIds[0],mediaPkgId:mp.id,accountPkgId:ap.id,mediaRows:rows,dramaPkgIds:dIds,materialPkgIds:mIds,lastComplete:`2026-06-${String(24-Math.floor(Math.random()*7)).padStart(2,'0')} ${String(Math.floor(Math.random()*24)).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}:00`,creator:user,updater:mockUsers[Math.floor(Math.random()*10)],created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
+  return{id:1571+i,name:`${user}-${time}-${lang}`,status:Math.random()>.9?'停用':'启用',bidStrategy:strategies[Math.floor(Math.random()*4)],dailyBudget:`$${Math.floor(Math.random()*500+50)}`,interval:Math.floor(Math.random()*30+5),optimization:mockOptimizations[Math.floor(Math.random()*3)],target:i%2?'免费':'付费',dramaPkgId:dIds[0],materialPkgId:mIds[0],mediaPkgId:mp.id,accountPkgId:ap.id,mediaRows:rows,dramaPkgIds:dIds,materialPkgIds:mIds,creator:user,updater:mockUsers[Math.floor(Math.random()*10)],created:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`,updated:`2026-06-${String(24-Math.floor(Math.random()*14)).padStart(2,'0')}`}});
 // ==================== 执行单元（任务 × 媒体行 × 短剧包 × 素材包） ====================
-const UNIT_STATUS=['待执行','执行中','已完成','已跳过','失败'];
-const UNIT_FAIL=['','网络超时','素材审核未通过','账户预算不足','定向包无有效地区','短剧已下线'];
+// 执行单元只记录「引用」与「执行历史」，自身不存 state：状态一律由 unitRuns(uid)[0] 派生
+const UNIT_FAIL=['网络超时','素材审核未通过','账户预算不足','定向包无有效地区','短剧已下线'];
+// 一轮执行在各层级产出/失败的条数：广告系列 → 广告组 → 广告（下层只从上层成功的派生）
+const RUN_LEVELS=[['campaign','广告系列'],['adGroup','广告组'],['ad','广告']];
+function zeroRunCounts(){return {campaign:{ok:0,fail:0},adGroup:{ok:0,fail:0},ad:{ok:0,fail:0}}}
+function mockRunCounts(result){
+  if(result==='已跳过')return zeroRunCounts();
+  const c=1+Math.floor(Math.random()*(result==='执行中'?2:4));   // 执行中的那轮只落了一部分
+  const cf=result==='失败'?1+Math.floor(Math.random()*c):0;      // 失败可能全挂在系列层
+  const cOk=c-cf;
+  const gOk=cOk*(2+Math.floor(Math.random()*2));                 // 广告组只从成功的系列派生
+  const gf=result==='失败'&&gOk?Math.floor(Math.random()*gOk):0;
+  const aOk=(gOk-gf)*(2+Math.floor(Math.random()*3));            // 广告只从成功的广告组派生
+  const af=result==='失败'&&aOk?Math.floor(Math.random()*Math.min(aOk,3)):0;
+  return {campaign:{ok:cOk,fail:cf},adGroup:{ok:gOk-gf,fail:gf},ad:{ok:aOk-af,fail:af}};
+}
+function runCountText(counts){
+  if(RUN_LEVELS.every(([k])=>!counts[k].ok&&!counts[k].fail))return '—';
+  return RUN_LEVELS.map(([k,label])=>`${label} ${counts[k].ok}/${counts[k].fail}`).join(' · ');
+}
+function runCountCells(counts){
+  return RUN_LEVELS.map(([k])=>`<td><span style="color:#67c23a">${counts[k].ok}</span> / <span style="color:#f56c6c">${counts[k].fail}</span></td>`).join('');
+}
 const executionUnits=[];
+const taskRuns={};   // taskId -> [{batchId,at,unitIds}] 按调度批次，倒序（[0] 为最近一次）
+const unitRuns={};   // unitId -> [{batchId,at,result,counts,failReason}] 倒序（[0] 为最近一次）
+let unitBatchSeq=0;
 autoTasks.forEach((t,ti)=>{
+  const runs=[];
   t.mediaRows.forEach(mr=>t.dramaPkgIds.forEach(did=>t.materialPkgIds.forEach(mid=>{
-    const r=()=>Math.random();
-    const bad=t.dramaPkgIds.length>1&&did===t.dramaPkgIds[1]&&ti%4===0;
-    const st=t.status==='停用'?'已跳过':(bad?'已跳过':(r()>.3?'已完成':(r()>.5?'执行中':(r()>.4?'失败':'待执行'))));
     executionUnits.push({id:4000+executionUnits.length,taskId:t.id,media:mr.media,accountPkgId:mr.accountPkgId,mediaPkgId:mr.mediaPkgId,
-      dramaPkgId:did,materialPkgId:mid,seriesCount:st==='已完成'?Math.floor(r()*4)+1:0,status:st,
-      failReason:st==='失败'?UNIT_FAIL[Math.floor(r()*(UNIT_FAIL.length-1))+1]:'',updated:`2026-06-${String(24-Math.floor(r()*7)).padStart(2,'0')} ${String(Math.floor(r()*24)).padStart(2,'0')}:${String(Math.floor(r()*60)).padStart(2,'0')}:00`});
+      dramaPkgId:did,materialPkgId:mid});
   })));
+  const us=executionUnits.filter(u=>u.taskId===t.id);
+  // 生效时长决定跑了多少轮；按任务间隔倒推，保证时间严格倒序（[0] 为最近一次）
+  const batchCount=2+Math.floor(Math.random()*5);
+  const end=new Date(2026,5,24,Math.floor(Math.random()*24),Math.floor(Math.random()*60),0);
+  const base=unitBatchSeq;unitBatchSeq+=batchCount;
+  for(let b=0;b<batchCount;b++){
+    const d=new Date(end.getTime()-b*t.interval*60000);
+    const at=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`;
+    const batchId=base+batchCount-b,isLatest=b===0,unitIds=[];
+    us.forEach(u=>{
+      // 停用任务、以及「多短剧包时第二个包」的单元恒被跳过
+      const skip=t.status==='停用'||(t.dramaPkgIds.length>1&&u.dramaPkgId===t.dramaPkgIds[1]&&ti%4===0);
+      let result=skip?'已跳过':'已完成';
+      if(result==='已完成'&&Math.random()>.85)result='失败';
+      const failReason=result==='失败'?UNIT_FAIL[Math.floor(Math.random()*UNIT_FAIL.length)]:'';
+      (unitRuns[u.id]=unitRuns[u.id]||[]).push({batchId,at,result,counts:mockRunCounts(result),failReason,pending:isLatest&&result==='已完成'&&Math.random()>.85});
+      unitIds.push(u.id);
+    });
+    runs.push({batchId,at,unitIds});
+  }
+  taskRuns[t.id]=runs;
 });
 function unitsOfTask(taskId){return executionUnits.filter(u=>u.taskId===taskId)}
+function unitRunsOf(unitId){return unitRuns[unitId]||[]}
+function latestRunTime(unitId){const r=unitRunsOf(unitId)[0];return r?r.at:'-'}
+function taskRunsOf(taskId){return taskRuns[taskId]||[]}
+function batchSummary(run){
+  const res=run.unitIds.map(uid=>{const rec=unitRunsOf(uid).find(x=>x.batchId===run.batchId);return rec?(rec.pending?'执行中':rec.result):''});
+  const n=s=>res.filter(x=>x===s).length,total=run.unitIds.length;
+  if(n('已完成')===total)return `本轮 ${total} 个单元 · 全部成功`;
+  const parts=[`成功 ${n('已完成')}`];
+  if(n('失败'))parts.push(`失败 ${n('失败')}`);
+  if(n('已跳过'))parts.push(`跳过 ${n('已跳过')}`);
+  if(n('执行中'))parts.push(`执行中 ${n('执行中')}`);
+  return `本轮 ${total} 个单元 · ${parts.join(' · ')}`;
+}
 let expandedTasks=new Set();
 function toggleUnitRows(taskId){expandedTasks.has(taskId)?expandedTasks.delete(taskId):expandedTasks.add(taskId);renderAutoTasks()}
 function unitStatusCell(s){const cls=s==='已完成'?'running':(s==='失败'?'error':(s==='执行中'?'pending':'stopped'));return `<span class="col-status ${cls}">${s}</span>`}
@@ -2786,18 +2857,21 @@ function mediaRowCell(t){
   const extra=rows.length>1?' cmd-extra':'';
   return `${taskMediaOf(t)}<span class="${extra.trim()||'cmd-more'}" style="font-size:12px;color:var(--primary);cursor:pointer" onclick="event.stopPropagation();toggleUnitRows(${t.id})">${rows.length>1?' · '+unitsOfTask(t.id).length+' 个执行单元 ▾':''}</span>`;
 }
-// 执行单元子行：列位与父行对齐，四个包放进与父行相同的列
+// 执行单元子行：只展示引用与「上次完成时间」，执行结果一律去日志抽屉看
 function renderUnitRows(t){
   const us=unitsOfTask(t.id);
   if(!us.length)return `<tr class="unit-row"><td colspan="16" style="color:var(--text-secondary);padding-left:48px">该任务暂无执行单元</td></tr>`;
   return us.map(u=>{
     const ap=findPkg('account',u.accountPkgId),dp=findPkg('drama',u.dramaPkgId),mp=findPkg('material',u.materialPkgId),mpp=findPkg('media',u.mediaPkgId);
     const bad=(ap&&ap.status==='停用')||(dp&&dp.status==='停用')||(mp&&mp.status==='停用')||(mpp&&mpp.status==='停用');
-    const info=`${u.seriesCount} 个系列${bad?' · <span style="color:#e6a23c">含停用包</span>':''}${u.failReason?` · <span style="color:#f56c6c">${u.failReason}</span>`:''}`;
-    return `<tr class="unit-row"><td></td><td style="padding-left:42px;color:var(--text-secondary)">└ 单元 ${u.id}</td><td></td><td>${unitStatusCell(u.status)}</td><td>${u.media}</td><td colspan="5" style="color:var(--text-secondary);font-size:12px">${info}</td><td>${u.updated}</td><td>${dp?dp.name:'-'}</td><td>${mp?mp.name:'-'}</td><td colspan="2">${ap?ap.name:'-'} / ${mpp?mpp.name:'-'}</td><td></td></tr>`;
+    return `<tr class="unit-row"><td></td><td style="padding-left:42px;color:var(--text-secondary)">└ 单元 ${u.id}</td><td></td><td></td>`+
+      `<td>${u.media}${bad?' <span style="color:#e6a23c">· 含停用包</span>':''}</td><td></td>`+
+      `<td>${latestRunTime(u.id)}</td><td></td><td></td><td></td><td></td>`+
+      `<td>${dp?dp.name:'-'}</td><td>${mp?mp.name:'-'}</td><td colspan="2">${ap?ap.name:'-'} / ${mpp?mpp.name:'-'}</td>`+
+      `<td><button class="btn btn-text btn-sm" onclick="event.stopPropagation();openUnitLog(${u.id})">日志</button></td></tr>`;
   }).join('');
 }
-function renderAutoTasks(p=1){renderTable('autoTaskTableBody',filteredTasks,['id',{key:'name',render:r=>{const bad=taskBadPkgs(r);return `<span class="col-name${bad.length?' invalid':''}" title="${bad.length?'引用的'+bad.join('、'):''}" onclick="openTaskModal(${r.id})">${r.name}</span>`}},{key:'status',render:r=>`<span class="col-status ${r.status==='启用'?'running':'stopped'}">${r.status}</span>`},{key:'media',render:r=>mediaRowCell(r)},'interval','lastComplete','creator','updater','created','updated',{key:'dramaPkgId',render:r=>pkgCellMulti('drama',r.dramaPkgIds||[r.dramaPkgId],r.id)},{key:'materialPkgId',render:r=>pkgCellMulti('material',r.materialPkgIds||[r.materialPkgId],r.id)},{key:'mediaPkgId',render:r=>pkgCellMulti('media',(r.mediaRows||[{mediaPkgId:r.mediaPkgId}]).map(x=>x.mediaPkgId),r.id)},{key:'accountPkgId',render:r=>pkgCellMulti('account',(r.mediaRows||[{accountPkgId:r.accountPkgId}]).map(x=>x.accountPkgId),r.id)}],10,[{label:'编辑',onclick:r=>`openTaskModal(${r.id})`},{label:'复制',onclick:r=>`copyTask(${r.id})`},{label:'日志'}],p,r=>renderUnitRows(r));renderPagination('autoTaskPagination',filteredTasks.length,10,p=>renderAutoTasks(p),p);}
+function renderAutoTasks(p=1){renderTable('autoTaskTableBody',filteredTasks,['id',{key:'name',render:r=>{const bad=taskBadPkgs(r);return `<span class="col-name${bad.length?' invalid':''}" title="${bad.length?'引用的'+bad.join('、'):''}" onclick="openTaskModal(${r.id})">${r.name}</span>`}},{key:'status',render:r=>`<span class="col-status ${r.status==='启用'?'running':'stopped'}">${r.status}</span>`},{key:'media',render:r=>mediaRowCell(r)},'interval',{key:'lastComplete',render:r=>{const runs=taskRunsOf(r.id);return runs.length?runs[0].at:'-'}},'creator','updater','created','updated',{key:'dramaPkgId',render:r=>pkgCellMulti('drama',r.dramaPkgIds||[r.dramaPkgId],r.id)},{key:'materialPkgId',render:r=>pkgCellMulti('material',r.materialPkgIds||[r.materialPkgId],r.id)},{key:'mediaPkgId',render:r=>pkgCellMulti('media',(r.mediaRows||[{mediaPkgId:r.mediaPkgId}]).map(x=>x.mediaPkgId),r.id)},{key:'accountPkgId',render:r=>pkgCellMulti('account',(r.mediaRows||[{accountPkgId:r.accountPkgId}]).map(x=>x.accountPkgId),r.id)}],10,[{label:'编辑',onclick:r=>`openTaskModal(${r.id})`},{label:'复制',onclick:r=>`copyTask(${r.id})`},{label:'日志',onclick:r=>`openTaskLog(${r.id})`}],p,r=>renderUnitRows(r));renderPagination('autoTaskPagination',filteredTasks.length,10,p=>renderAutoTasks(p),p);}
 
 // ==================== 任务效率概览卡 ====================
 let filteredTasks=autoTasks;
@@ -3910,6 +3984,58 @@ function openPkgViewOf(selectId){
   openPkgView(type,+v);
 }
 function closePkgView(){document.getElementById('pkgViewDrawer').style.display='none'}
+// ==================== 执行历史抽屉 ====================
+// 单元级：该单元逐轮结果；任务级：按调度批次汇总，可下钻到单元级
+function unitRefText(u){
+  const ap=findPkg('account',u.accountPkgId),dp=findPkg('drama',u.dramaPkgId),mp=findPkg('material',u.materialPkgId),mpp=findPkg('media',u.mediaPkgId);
+  return `${u.media} · 账户包 ${ap?ap.name:'-'} · 策略包 ${mpp?mpp.name:'-'} · 短剧包 ${dp?dp.name:'-'} · 素材包 ${mp?mp.name:'-'}`;
+}
+function logRows(recs){
+  return `<div class="table-wrap"><table><thead><tr>`+
+    `<th style="width:48px">批次</th><th style="width:145px">执行时间</th><th style="width:72px">结果</th>`+
+    RUN_LEVELS.map(([,label])=>`<th style="width:${label==='广告系列'?80:70}px">${label}</th>`).join('')+
+    `<th>失败原因</th></tr></thead><tbody>`+
+    recs.map(x=>`<tr><td>${x.batchId}</td><td>${x.at}</td><td>${unitStatusCell(x.pending?'执行中':x.result)}</td>`+
+      runCountCells(x.counts)+`<td>${x.failReason||'-'}</td></tr>`).join('')+`</tbody></table></div>`;
+}
+function renderUnitLog(unitId){
+  const u=executionUnits.find(x=>x.id===unitId);if(!u)return;
+  const recs=unitRunsOf(unitId);
+  document.getElementById('unitLogBody').innerHTML=
+    `<div class="drawer-section-title">单元引用</div>`+
+    `<div class="form-item"><label>单元 ID</label><div class="readonly-value">${u.id}（任务 ${u.taskId}）</div></div>`+
+    `<div class="form-item"><label>引用</label><div class="readonly-value muted">${unitRefText(u)}</div></div>`+
+    `<div class="drawer-section-title">执行历史（${recs.length}）<span class="tip-text" style="font-weight:400"> · 层级三列均为 成功 / 失败 条数</span></div>`+
+    (recs.length?logRows(recs):'<div class="tip-text" style="padding:16px 4px">该单元暂无执行记录</div>');
+}
+function openUnitLog(unitId){
+  const u=executionUnits.find(x=>x.id===unitId);if(!u)return;
+  document.getElementById('unitLogTitle').textContent=`单元 ${unitId} 执行历史`;
+  renderUnitLog(unitId);
+  document.getElementById('unitLogDrawer').style.display='flex';
+}
+function openTaskLog(taskId){
+  const t=autoTasks.find(x=>x.id===taskId);if(!t)return;
+  const runs=taskRunsOf(taskId);
+  document.getElementById('taskLogTitle').textContent=`任务 ${taskId} 执行历史`;
+  document.getElementById('taskLogBody').innerHTML=runs.length?runs.map((run,i)=>{
+    const rows=run.unitIds.map(uid=>{
+      const rec=unitRunsOf(uid).find(x=>x.batchId===run.batchId);if(!rec)return '';
+      const st=rec.pending?'执行中':rec.result;
+      const detail=[runCountText(rec.counts),rec.failReason].filter(Boolean).join(' · ');
+      return `<div class="pkg-list-row" onclick="openUnitLog(${uid})"><span class="col-name">单元 ${uid}</span><span>${unitStatusCell(st)}</span><span class="tip-text">${detail}</span></div>`;
+    }).join('');
+    return `<div style="border:1px solid #ebeef5;border-radius:6px;margin-bottom:12px;overflow:hidden">`+
+      `<div style="background:#fafafa;padding:10px 12px;display:flex;justify-content:space-between;font-size:13px">`+
+        `<span style="font-weight:500">${run.at} · 第 ${runs.length-i} 次调度</span><span class="tip-text">${batchSummary(run)}</span></div>`+
+      rows+`</div>`;
+  }).join(''):'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>';
+  document.getElementById('taskLogDrawer').style.display='flex';
+}
+function closeLogDrawer(){
+  document.getElementById('unitLogDrawer').style.display='none';
+  document.getElementById('taskLogDrawer').style.display='none';
+}
 function copyTask(id){
   const t=autoTasks.find(x=>x.id===id);if(!t)return;
   const copy={...t,id:Math.max(...autoTasks.map(x=>x.id))+1,name:t.name+'-复制',
@@ -3919,8 +4045,9 @@ function copyTask(id){
   autoTasks.push(copy);
   (t.mediaRows||[]).forEach(mr=>(t.dramaPkgIds||[]).forEach(did=>(t.materialPkgIds||[]).forEach(mid=>{
     const src=executionUnits.find(u=>u.taskId===t.id&&u.media===mr.media&&u.dramaPkgId===did&&u.materialPkgId===mid);
-    if(src)executionUnits.push({...src,id:4000+executionUnits.length,taskId:copy.id,seriesCount:0,status:'待执行',failReason:''});
+    if(src)executionUnits.push({...src,id:4000+executionUnits.length,taskId:copy.id});
   })));
+  taskRuns[copy.id]=[];   // 新任务尚无执行历史，单元状态为「未执行」
   applyTaskFilter();
   alert('已复制任务「'+copy.name+'」：复制的是引用，指向同一批包，不复制包内容');
 }
