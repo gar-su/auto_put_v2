@@ -25,7 +25,7 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 - `#pkgBody-*` 三个抽屉同时存在于 DOM，只按 `.form-item` 计数会把三个包的字段混在一起，必须先按 `#pkgBody-<type>` 限定范围
 - **断言样式别只查溢出**：`.form-item label{width:140px}` 会命中所有后代 label，导致下拉选项文字**换行**。换行不产生 `scrollWidth > clientWidth`，查溢出的断言会全绿放过 → 补一条高度断言（单行 < 40px）
 - **`getElementById` 只返回首个匹配**，重复 id 会让断言"通过"而实际页面已坏。改完表单调一次重复 id 断言（`dupIds` 必须为 `[]`）
-- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内多次 `Runtime.evaluate` 才是稳定的。确定性的是 id、包引用、`1571..1577` 任务名、以及**任务 1577（`i===6`）恒引用停用包**——它专用来跑「失效标黄」路径，别当成脏数据清掉。`executionUnits`（由 `autoTasks` 叉乘生成）**只存引用**（`id` / `taskId` / `media` / 四个包 id），不存任何状态字段；执行结果全在 `taskRuns`（任务 × 批次）与 `unitRuns`（单元 × 批次）两张 mock 表里，都按时间**严格倒序**、`[0]` 为最近一次。结果、失败原因、以及每轮的 `counts`（广告系列/广告组/广告 三层的成功失败条数）同样是随机的，**唯一确定的是单元 id（从 4000 起）、它引用的四个包、以及两张表的倒序性**
+- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内多次 `Runtime.evaluate` 才是稳定的。确定性的是 id、包引用、`1571..1577` 任务名、以及**任务 1577（`i===6`）恒引用停用包**——它专用来跑「失效标黄」路径，别当成脏数据清掉。`executionUnits`（由 `autoTasks` 叉乘生成）**只存引用**（`id` / `taskId` / `media` / 四个包 id），不存任何状态字段；产出全在 `taskRuns`（任务 → 每轮 `{batchId,at,unitIds}`）与 `unitRuns`（单元 → 每轮 `{batchId,at,counts,failReason}`）两张 mock 表里，都按时间**严格倒序**、`[0]` 为最近一次。`counts` 里的三层成功失败条数、失败原因同样是随机的，**唯一确定的是单元 id（从 4000 起）、它引用的四个包、以及两张表的倒序性**
 - **headless 下 `alert()` / `confirm()` 会阻塞**，测试里点「添加媒体」「保存包」这类入口前先 stub `window.alert` / `window.confirm`，否则脚本挂死；报 `no matches found` 的 zsh glob 会中止整条命令，`rm` 与通配符别写在同一行
 - **抽屉有 `slideInRight .25s` 动画**，刚打开时还在屏外（`left:1600`），立刻查几何或 `elementFromPoint` 会拿到 `null`/错值；断言前先等 450ms
 
@@ -86,8 +86,11 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 **`renderTable` 里 `const ok=row.uploadStatus!=='上传成功'` 语义是反的**——`ok` 为真表示「没上传成功」，据此给 checkbox 和按钮加 `disabled`；照字面理解会写反。
 `syncBatchCounts()` 每次把全选框强制置为未选，与列表自己的选中态是两套逻辑，改批量条前先看清走的是哪条。
 
-**执行历史只在两个抽屉里看，任务列表上一律不显示执行结果**（任务行「日志」→ `openTaskLog` → `#taskLogDrawer`，单元行「日志」→ `openUnitLog` → `#unitLogDrawer`，`closeLogDrawer` 一次关两个；任务级每条单元行可点击下钻到单元级）。`renderUnitRows` 的子行**只放引用与「上次完成时间」**，四个包仍与父行列位对齐（子行 11 个 `td`，colspan 合计必须恒为 16，改列时要重数）。注意列头写的是「上次完成时间」，但父子两级取的都是 `[0].at`——**最近一次执行时间，不管那次成功还是失败**；命名与口径不一致是已知的，改口径时别只改一处。
-单元级抽屉的表体是 `批次 / 执行时间 / 结果 / 广告系列 / 广告组 / 广告 / 失败原因`，后三列渲染的是 `runRecord.counts` 里的 **成功 / 失败 条数**（`RUN_LEVELS` 驱动列名与取值顺序，`runCountCells` 出单元格、`runCountText` 出任务抽屉那行的摘要，加层级时只改 `RUN_LEVELS` 一处）。`mockRunCounts` 保证**下层只从上层成功的派生**：系列全失败则组与广告必为 0，改这个函数时别破坏该不变量，否则会出现「0 个系列成功却有 6 个广告组成功」
+**执行历史只在两个抽屉里看，任务列表上一律不显示执行结果**（任务行「日志」→ `openTaskLog` → `#taskLogDrawer`，单元行「日志」→ `openUnitLog` → `#unitLogDrawer`，`closeLogDrawer` 一次关两个）。`renderUnitRows` 的子行**只放引用与「上次完成时间」**，四个包仍与父行列位对齐（子行 11 个 `td`，colspan 合计必须恒为 16，改列时要重数）。注意列头写的是「上次完成时间」，但父子两级取的都是 `[0].at`——**最近一次执行时间，不管那次成功还是失败**；命名与口径不一致是已知的，改口径时别只改一处。
+**执行单元没有状态模型**——`待执行` / `执行中` / `已完成` / `已跳过` / `失败` 这套已废弃，单元对象和 `unitRuns` 记录里都不许再长出 `result` / `status` / `pending` 之类字段，`unitStatusCell` 也已删除。某轮跑没跑、跑成没跑，一律看产出计数。
+两级抽屉的分工：**任务级只给每轮汇总、不列单元**（`batchSummary` 把该批次 `unitIds` 各自记录加总，`unitIds` 为空时显示「本轮无产出」），所以任务抽屉没有下钻；**单元级给逐轮明细**，表体是 `批次 / 执行时间 / 广告系列 / 广告组 / 广告 / 失败原因`。后三列是 `runRecord.counts` 里的 **成功 / 失败 条数**（`RUN_LEVELS` 驱动列名与取值顺序，`runCountCells` 出单元格、`runCountInline` 出任务抽屉的汇总行，加层级时只改 `RUN_LEVELS` 一处）。`mockRunCounts` 保证**下层只从上层成功的派生**：系列全失败则组与广告必为 0，改这个函数时别破坏该不变量，否则会出现「0 个系列成功却有 6 个广告组成功」。
+**没产出的轮次不写记录**，所以同一任务下各单元的 `unitRuns` 长度可以不同、批次号也不连续：引用停用包的单元（`unitHasDisabledPkg`）永远不产出、一条记录都没有，抽屉走空态、列表「上次完成时间」显示 `-`；其余单元每轮有 15% 概率「未轮到」。相应地 `taskRuns[batchId].unitIds` **只列本轮有产出的单元**，可空，别拿它当「该任务的单元全集」
+
 
 `.btn-option` 按钮组有**三个互不相通的接线点**，新增一组要挑对地方：`bindBtnGroup(sel)` 通用版（`index.html:2310` 起，内含 `#materialCountType` / `#singleRoundRepeatType` 等硬编码特判）、带可选回调的 cfg 数组、以及 `#materialFilterType` / `#materialModeBtns` / `#dpRuleModeBtns` 等自带 handler 的。`setBtnGroup()` / `btnVal()` 是所有 `init*Pkg` 用的程序化读写口。复选框组必须包在 `.check-group` 里，否则 label 的 `checked` 类不更新。
 
