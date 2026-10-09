@@ -4006,6 +4006,7 @@ function renderUnitLog(unitId){
     `<div class="form-item"><label>单元 ID</label><div class="readonly-value">${u.id}（任务 ${u.taskId}）</div></div>`+
     `<div class="form-item"><label>引用</label><div class="readonly-value muted">${unitRefText(u)}</div></div>`+
     `<div class="drawer-section-title">执行历史（${recs.length}）<span class="tip-text" style="font-weight:400"> · 三列为各层 成功 / 失败 条数，未产出的轮次不记</span></div>`+
+    `<div class="tip-text" style="margin:0 0 12px;line-height:1.6">执行日志仅保留最近 5 天数据</div>`+
     (recs.length?logRows(recs):'<div class="tip-text" style="padding:16px 4px">该单元暂无执行记录</div>');
 }
 function openUnitLog(unitId){
@@ -4018,11 +4019,12 @@ function openTaskLog(taskId){
   const t=autoTasks.find(x=>x.id===taskId);if(!t)return;
   const runs=taskRunsOf(taskId);
   document.getElementById('taskLogTitle').textContent=`任务 ${taskId} 执行历史`;
-  document.getElementById('taskLogBody').innerHTML=runs.length?runs.map((run,i)=>
+  document.getElementById('taskLogBody').innerHTML=`<div class="tip-text" style="margin:0 0 12px;line-height:1.6">执行日志仅保留最近 5 天数据</div>`+
+  (runs.length?runs.map((run,i)=>
     `<div style="border:1px solid #ebeef5;border-radius:6px;margin-bottom:12px;overflow:hidden">`+
       `<div style="background:#fafafa;padding:10px 12px;font-size:13px;font-weight:500;border-bottom:1px solid #ebeef5">${run.at} · 第 ${runs.length-i} 次调度</div>`+
       `<div style="padding:10px 12px;font-size:13px">${batchSummary(run)}</div></div>`
-  ).join(''):'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>';
+  ).join(''):'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>');
   document.getElementById('taskLogDrawer').style.display='flex';
 }
 function closeLogDrawer(){
