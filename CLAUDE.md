@@ -5,27 +5,50 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 仓库定位
 
 **Meta自动化任务（v2）** 需求与原型仓库，**无构建系统、无测试、无包管理器、无后端代码**。产出物两类：
-- `index.html` — 单文件 UI 原型（3681 行，内联 HTML/CSS/JS，mock 数据硬编码），浏览器直接打开即可预览
+- `index.html` — 单文件 UI 原型（内联 HTML/CSS/JS，mock 数据硬编码），浏览器直接打开即可预览
 - `index.html.bak` — 旧备份，已 gitignore，**别读它**：内容与当前 `index.html` 冲突
 - `*.md` — 需求文档与设计文档
+- `AGENTS.md` — 本文的逐字副本（只有开头 3 行标题段不同，给 Codex 读，当前未入库）。**改完本文要顺手把它同步过去**，否则两边说法会分叉
+
+**本文里凡是写死行号的地方都会随改动漂移，找代码优先用函数名/字面串搜，别信行号。**
 
 由 `auto_put`（v1）分叉而来，承接「任务模块化」改造及其后续产出物。v1 冻结、不再接受新需求，改动一律在 `auto_put_v2` 展开。跨平台同步事宜改由本仓库承担，改一个需求前先确认要不要带 `auto_put_tiktok`（TikTok 投放）端。
 
 ## 运行与验证
 
-无 lint / 无 typecheck / 无测试命令可跑（无 JS 工具链，`index.html` 内联全部代码、无外部 CDN 依赖，唯一 `<script>` 块从 `index.html:1301` 起，到 `3679` 止）。预览即 `open index.html`。
+无 lint / 无 typecheck / 无测试命令可跑（无 JS 工具链，`index.html` 内联全部代码、无外部 CDN 依赖，全文只有一个 `<script>` 块，`grep -n '^<script>\|^</script>' index.html` 即得范围）。预览即 `open index.html`。
 
-**改完先做语法体检**（比开浏览器快，能抓住绝大多数低级错误）：
+**改完先做语法体检**（比开浏览器快，能抓住绝大多数低级错误）。本机**没装 node / bun / deno**，所以走 JXA（`osascript -l JavaScript` 的 JavaScriptCore）：
 ```bash
-node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>([\s\S]*)<\/script>/);new (require('vm').Script)(m[1]);console.log('OK')"
+D=$(mktemp -d)
+python3 -c "import re;h=open('index.html',encoding='utf-8').read();open('$D/app.js','w',encoding='utf-8').write(re.search(r'<script>([\s\S]*)</script>',h).group(1))"
+APPJS=$D/app.js osascript -l JavaScript -e '
+ObjC.import("Foundation");
+var p=$.NSProcessInfo.processInfo.environment.objectForKey("APPJS").js;
+var s=$.NSString.stringWithContentsOfFileEncodingError(p,$.NSUTF8StringEncoding,null).js;
+if(!s){"READ FAILED"}else{try{new Function(s);"SYNTAX OK ("+s.length+")"}catch(e){"SYNTAX ERROR: "+e.message}}'
+rm -rf "$D"
 ```
+`APPJS` 必须真的传进去：漏了会读到空串、`new Function(undefined)` 照样回 "SYNTAX OK"，白测。首次用这套先拿一个故意写坏的文件自检一次检测器有效。装了 node 的话原命令也能用：`node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>([\s\S]*)<\/script>/);new (require('vm').Script)(m[1]);console.log('OK')"`。
 
-原型改动一律用 DOM 断言验证，**禁止截图**：headless Chrome + CDP（`--remote-debugging-port`，Node 自带全局 WebSocket，无需 playwright）驱动，`Runtime.evaluate` 断言元素存在性/文本/类名/几何/`scrollWidth`，`Input.dispatchMouseEvent` 测 hover，输出 JSON 核对；临时脚本写 `/tmp` 用完即删。以下坑按踩过的顺序记：
+原型改动一律用 DOM 断言验证，**禁止截图**。本机没有 node，所以**不要**照搬 `--remote-debugging-port` + WebSocket 那套（没有现成的 WS 客户端）；改用「把探针脚本追加进副本 + `--dump-dom`」：
+```bash
+D=$(mktemp -d)
+python3 -c "
+h=open('index.html',encoding='utf-8').read();p=open('$D/probe.js',encoding='utf-8').read()
+open('$D/probe.html','w',encoding='utf-8').write(h.replace('</body>','<script>'+p+'</script>\n</body>'))"
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --no-sandbox \
+  --no-first-run --user-data-dir=$D/cp --dump-dom --virtual-time-budget=9000 "file://$D/probe.html" > $D/dump.html &
+CPID=$!; for i in $(seq 1 90); do sleep 1; grep -q 'id="probeOut"' $D/dump.html && break; done
+kill $CPID 2>/dev/null; pkill -f "user-data-dir=$D/cp"
+```
+`probe.js` 里 `window.alert/confirm` 先 stub，断言写进 `out` 对象，结尾 `document.body.appendChild(<pre id="probeOut">PROBE_JSON {…}</pre>)`，再用 python3 从 dump 里正则抠出 JSON。两个坑：`--dump-dom` 跑完 Chrome 不一定退出，所以放后台 + 看门狗轮询 + kill，否则 bash 工具卡到超时；等待时**别 grep `PROBE_JSON`**（它同时出现在被内联的探针源码里，会立刻误命中），要 grep `id="probeOut"`。注意 `--virtual-time-budget` 会把 `setTimeout` 快进，探针里的 `await sleep(500)` 等动画无需真实等待。以下坑按踩过的顺序记：
 - 抽屉树是 fixed 定位，判可见性要沿祖先链查 `display`/`visibility`，只用 `offsetParent` 会误判
 - `#pkgBody-*` 三个抽屉同时存在于 DOM，只按 `.form-item` 计数会把三个包的字段混在一起，必须先按 `#pkgBody-<type>` 限定范围
 - **断言样式别只查溢出**：`.form-item label{width:140px}` 会命中所有后代 label，导致下拉选项文字**换行**。换行不产生 `scrollWidth > clientWidth`，查溢出的断言会全绿放过 → 补一条高度断言（单行 < 40px）
 - **`getElementById` 只返回首个匹配**，重复 id 会让断言"通过"而实际页面已坏。改完表单调一次重复 id 断言（`dupIds` 必须为 `[]`）
-- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内多次 `Runtime.evaluate` 才是稳定的。确定性的是 id、包引用、`1571..1577` 任务名、以及**任务 1577（`i===6`）恒引用停用包**——它专用来跑「失效标黄」路径，别当成脏数据清掉。`executionUnits`（由 `autoTasks` 叉乘生成）**只存引用**（`id` / `taskId` / `media` / 四个包 id），不存任何状态字段；产出全在 `taskRuns`（任务 → 每轮 `{batchId,at,unitIds}`）与 `unitRuns`（单元 → 每轮 `{batchId,at,counts,failReason}`）两张 mock 表里，都按时间**严格倒序**、`[0]` 为最近一次。`counts` 里的三层成功失败条数、失败原因同样是随机的，**唯一确定的是单元 id（从 4000 起）、它引用的四个包、以及两张表的倒序性**
+- **`autoTasks` / `campaigns` / `adGroups` / `adsList` 的多个字段在载入时由 `Math.random()` 生成**（任务状态、竞价策略、预算、上传状态、失败原因、日期等），每次刷新结果都不同 → 不要断言这些字段的具体条数/文案；同一次页面载入内才是稳定的。确定性的是 id、包引用、`1571..1577` 任务名、以及**任务 1577（`i===6`）恒引用停用包**——它专用来跑「失效标黄」路径，别当成脏数据清掉。`executionUnits`（由 `autoTasks` 叉乘生成）**只存引用**（`id` / `taskId` / `media` / 四个包 id），不存任何状态字段；产出全在 `taskRuns`（任务 → 每轮 `{at,unitIds}`，只记调度时刻与该轮有产出的单元）与 `unitRuns`（单元 → 每轮 `{runId,at,counts,fails}`）两张 mock 表里，都按时间**严格倒序**、`[0]` 为最近一次。`counts` 里的三层成功失败条数、`fails` 里的失败短剧与失败类型同样是随机的，**唯一确定的是单元 id（从 4000 起）、它引用的四个包、`runId` 全局唯一且从属于单元、以及两张表的倒序性**
+- **18 位 ID 不能用 Number 算术**：2.1e17 附近 double 的步长是 32，`210822651181000000+n` 会把 n=1..31 全塌缩成同一个数（真被坑过：150 条记录只剩 7 个不同 runId，弹窗直接串单元）。造这类 mock ID 一律走 `snowId(prefix,n)` 拼字符串（前缀 + 定长序号 = 18 位），断言里比较也按字符串（等长数字串 `>` 可比）。`短剧ID` 走 `dramaSnowId(d)`，从 `playbookId|name|lang` 哈希得来，确定性、可跨刷新复现
 - **headless 下 `alert()` / `confirm()` 会阻塞**，测试里点「添加媒体」「保存包」这类入口前先 stub `window.alert` / `window.confirm`，否则脚本挂死；报 `no matches found` 的 zsh glob 会中止整条命令，`rm` 与通配符别写在同一行
 - **抽屉有 `slideInRight .25s` 动画**，刚打开时还在屏外（`left:1600`），立刻查几何或 `elementFromPoint` 会拿到 `null`/错值；断言前先等 450ms
 
@@ -88,13 +111,14 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 
 **执行历史只在两个抽屉里看，任务列表上一律不显示执行结果**（任务行「日志」→ `openTaskLog` → `#taskLogDrawer`，单元行「日志」→ `openUnitLog` → `#unitLogDrawer`，`closeLogDrawer` 一次关两个）。`renderUnitRows` 的子行**只放引用与「上次完成时间」**，四个包仍与父行列位对齐（子行 11 个 `td`，colspan 合计必须恒为 16，改列时要重数）。注意列头写的是「上次完成时间」，但父子两级取的都是 `[0].at`——**最近一次执行时间，不管那次成功还是失败**；命名与口径不一致是已知的，改口径时别只改一处。
 **执行单元没有状态模型**——`待执行` / `执行中` / `已完成` / `已跳过` / `失败` 这套已废弃，单元对象和 `unitRuns` 记录里都不许再长出 `result` / `status` / `pending` 之类字段，`unitStatusCell` 也已删除。某轮跑没跑、跑成没跑，一律看产出计数。
-两级抽屉的分工：**任务级只给每轮汇总、不列单元**（`batchSummary` 把该批次 `unitIds` 各自记录加总，`unitIds` 为空时显示「本轮无产出」），所以任务抽屉没有下钻；**单元级给逐轮明细**，表体是 `批次 / 执行时间 / 广告系列 / 广告组 / 广告 / 失败原因`。后三列是 `runRecord.counts` 里的 **成功 / 失败 条数**（`RUN_LEVELS` 驱动列名与取值顺序，`runCountCells` 出单元格、`runCountInline` 出任务抽屉的汇总行，加层级时只改 `RUN_LEVELS` 一处）。`mockRunCounts` 保证**下层只从上层成功的派生**：系列全失败则组与广告必为 0，改这个函数时别破坏该不变量，否则会出现「0 个系列成功却有 6 个广告组成功」。
-**没产出的轮次不写记录**，所以同一任务下各单元的 `unitRuns` 长度可以不同、批次号也不连续：引用停用包的单元（`unitHasDisabledPkg`）永远不产出、一条记录都没有，抽屉走空态、列表「上次完成时间」显示 `-`；其余单元每轮有 15% 概率「未轮到」。相应地 `taskRuns[batchId].unitIds` **只列本轮有产出的单元**，可空，别拿它当「该任务的单元全集」
+两级抽屉的分工：**任务级把该任务全部单元的运行记录平铺**（`taskRunRecords(taskId)` 汇总所有单元的记录，按 `at` 倒序、同刻按 unitId 倒序；表格多一列 `单元ID`），**不按运行记录ID 或调度轮次分组、也没有任何汇总行**——一条运行记录从属于一个单元，拿它去整合多个单元是错的（用户明确否过一次）。**单元级给该单元逐轮明细**，表体是 `运行记录ID / 执行时间 / 广告系列 / 广告组 / 广告 / 运行记录`。后三列是记录里 `counts` 的 **成功 / 失败 条数**（`RUN_LEVELS` 驱动列名与取值顺序，`runCountCells` 出单元格、`runLevelHeads` 出表头，加层级只改 `RUN_LEVELS` 一处）。末列「运行记录」是超链接 → `openRunLogModal(runId)` 打开居中弹窗 `#runLogModal`（「执行日志」，z-index 1004，压在两个抽屉 1002/1003 之上），表体 `任务ID / 单元ID / 运行记录ID / 短剧ID / 短剧名称 / 失败类型`，`失败类型` 是 `.fail-tag` 橙色胶囊，分页 `RUN_LOG_PAGE_SIZE=10`，该次运行无失败时空态显示「本次运行无失败记录」。弹窗数据走 `runLogRows(runId)`，扫 `executionUnits` 找持有该 `runId` 的单元——因为 ID 全局唯一，结果天然只属一个单元，所以**不需要也不该加"按来源过滤"的参数**。`batchSummary` / `runCountInline` / `zeroRunCounts` / `addRunCounts` / `runHasCounts` / `runUnitCells` 都随这次改造删掉了，别去恢复。两个抽屉的表体都带「每页数量 + 页码」分页条（共用 `logPager()`，选项 `LOG_PAGE_SIZES` = 10/20/50/100，默认 10；改页量回到第 1 页、重开抽屉页码归 1 而页量保留、记录变少时页码自动收敛）。分页只切表体，抽屉头「执行历史（N）」与分页条「共 N 条」都是总数。运行记录明细弹窗自带的是另一套固定 10 条/页分页（`RUN_LOG_PAGE_SIZE`），没接 `logPager`。`mockRunCounts` 保证**下层只从上层成功的派生**：系列全失败则组与广告必为 0，改这个函数时别破坏该不变量，否则会出现「0 个系列成功却有 6 个广告组成功」。
+`fails` 取代了旧的 `failReason` 字符串：每次运行一条记录挂一个 `{dramaId,dramaName,type}` 数组，由 `mockFailItems(u)` 从 `pkgDramas(u.dramaPkgId)` 里随机挑 1~3 部没跑出来的短剧（`pkgDramas` 按短剧包自解释：手选清单模式取 `dramaKeys`，按规则模式取 `已上线` 且命中 `langs` 的短剧）。失败类型词表就是 `UNIT_FAIL`，首位是 `没有素材`。
+**没产出的轮次不写记录**，所以同一任务下各单元的 `unitRuns` 长度可以不同、运行记录ID 也不连续：引用停用包的单元（`unitHasDisabledPkg`）永远不产出、一条记录都没有，抽屉走空态、列表「上次完成时间」显示 `-`；其余单元每轮有 15% 概率「未轮到」。相应地 `taskRuns[taskId][i].unitIds` **只列该轮有产出的单元**，可空，别拿它当「该任务的单元全集」
 
 
-`.btn-option` 按钮组有**三个互不相通的接线点**，新增一组要挑对地方：`bindBtnGroup(sel)` 通用版（`index.html:2310` 起，内含 `#materialCountType` / `#singleRoundRepeatType` 等硬编码特判）、带可选回调的 cfg 数组、以及 `#materialFilterType` / `#materialModeBtns` / `#dpRuleModeBtns` 等自带 handler 的。`setBtnGroup()` / `btnVal()` 是所有 `init*Pkg` 用的程序化读写口。复选框组必须包在 `.check-group` 里，否则 label 的 `checked` 类不更新。
+`.btn-option` 按钮组有**三个互不相通的接线点**，新增一组要挑对地方：`bindBtnGroup(sel)` 通用版（搜 `function bindBtnGroup`，内含 `#materialCountType` / `#singleRoundRepeatType` 等硬编码特判）、带可选回调的 cfg 数组、以及 `#materialFilterType` / `#materialModeBtns` / `#dpRuleModeBtns` 等自带 handler 的。`setBtnGroup()` / `btnVal()` 是所有 `init*Pkg` 用的程序化读写口。复选框组必须包在 `.check-group` 里，否则 label 的 `checked` 类不更新。
 
-初始化集中在 `index.html:3678` 一行（`initTaskFilterOptions();refreshTaskPkgOptions();…renderAds()`）——新增全局渲染入口挂这里。
+初始化集中在脚本块最后一行（搜 `initTaskFilterOptions();refreshTaskPkgOptions()`）——新增全局渲染入口挂这里。
 
 ## 任务表单与执行单元（多对多的当前形态）
 
@@ -137,7 +161,7 @@ node -e "const m=require('fs').readFileSync('index.html','utf8').match(/<script>
 
 ## 已知重复定义
 
-`openRefTaskList` 与 `closeRefTaskList` 各定义了**两次**（`index.html:1492` 与 `index.html:3618`），后者覆盖前者，改前一处不会有任何效果。清理前先确认没人依赖前者的写法。
+`openRefTaskList` 与 `closeRefTaskList` 各定义了**两次**（搜 `function openRefTaskList`，两处相距约 2200 行），后者覆盖前者，改前一处不会有任何效果。清理前先确认没人依赖前者的写法。
 
 ## 远程仓库与提交
 
