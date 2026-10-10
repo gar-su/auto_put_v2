@@ -132,6 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .table-wrap .col-status.stopped::before{background:var(--text-secondary)}
 .table-wrap .col-status.error::before{background:var(--danger)}
 .table-wrap .col-status.pending::before{background:var(--warning)}
+.fail-tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#fdf6ec;color:var(--warning);font-size:12px}
 
 /* 分页 */
 .pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px;font-size:13px;color:var(--text-secondary)}
@@ -1242,6 +1243,16 @@ tr.unit-row:hover>td{background:#f5f7fa}
     <div class="drawer-header"><span id="unitLogTitle">单元执行历史</span><span class="drawer-close" onclick="closeLogDrawer()">&times;</span></div>
     <div class="drawer-body" id="unitLogBody"></div>
     <div class="drawer-footer"><button type="button" class="btn-cancel" onclick="closeLogDrawer()">关闭</button></div>
+  </div>
+</div>
+
+<!-- ============ 运行记录明细弹窗（单元级 / 任务级共用） ============ -->
+<div class="modal-overlay" id="runLogModal" style="display:none;z-index:1004">
+  <div class="modal" style="width:820px;background:#fff;border-radius:8px;padding:24px;position:relative">
+    <div class="modal-close" onclick="closeRunLogModal()">&times;</div>
+    <div class="modal-title">执行日志</div>
+    <div id="runLogBody"></div>
+    <div class="pagination" id="runLogPagination" style="padding:12px 0 0"></div>
   </div>
 </div>
 
@@ -2754,12 +2765,9 @@ const autoTasks=Array.from({length:7},(_,i)=>{
 // ==================== 执行单元（任务 × 媒体行 × 短剧包 × 素材包） ====================
 // 执行单元只记录「引用」，不存状态，也没有状态模型：一轮跑了什么，全在 unitRuns 的产出计数里。
 // 任务级不给执行状态，只记每轮调度汇总的「广告系列 / 广告组 / 广告」成功失败数
-const UNIT_FAIL=['网络超时','素材审核未通过','账户预算不足','定向包无有效地区','短剧已下线'];
+const UNIT_FAIL=['没有素材','网络超时','素材审核未通过','账户预算不足','定向包无有效地区','短剧已下线'];
 // 一轮执行在各层级产出的条数：广告系列 → 广告组 → 广告（下层只从上层成功的派生）
 const RUN_LEVELS=[['campaign','广告系列'],['adGroup','广告组'],['ad','广告']];
-function zeroRunCounts(){return {campaign:{ok:0,fail:0},adGroup:{ok:0,fail:0},ad:{ok:0,fail:0}}}
-function addRunCounts(a,b){RUN_LEVELS.forEach(([k])=>{a[k].ok+=b[k].ok;a[k].fail+=b[k].fail});return a}
-function runHasCounts(c){return RUN_LEVELS.some(([k])=>c[k].ok||c[k].fail)}
 function runHasFail(c){return RUN_LEVELS.some(([k])=>c[k].fail>0)}
 function mockRunCounts(){
   const c=1+Math.floor(Math.random()*3);                         // 本轮建了 1-3 个广告系列
@@ -2773,14 +2781,33 @@ function mockRunCounts(){
 }
 function runCountPair(x){return `<span style="color:#67c23a">${x.ok}</span> / <span style="color:#f56c6c">${x.fail}</span>`}
 function runCountCells(counts){return RUN_LEVELS.map(([k])=>`<td>${runCountPair(counts[k])}</td>`).join('')}
-function runCountInline(counts){
-  if(!runHasCounts(counts))return '本轮无产出';
-  return RUN_LEVELS.map(([k,label])=>`${label} ${runCountPair(counts[k])}`).join(' · ');
+// 短剧ID 与运行记录ID 都由后端生成：前缀 + 定长序号拼成 18 位数字串（18 位整数已超 Number 精度，不能做算术加）
+function snowId(prefix,n){return prefix+String(n).padStart(18-prefix.length,'0')}
+function dramaSnowId(d){
+  let h=0;const s=`${d.playbookId}|${d.name}|${d.lang}`;
+  for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;
+  return snowId('200',h);
+}
+// 单元引用的短剧包 → 该单元本次要投的短剧清单
+function pkgDramas(pkgId){
+  const p=findPkg('drama',pkgId);if(!p)return [];
+  if(p.ruleMode==='list')return (p.dramaKeys||[]).map(k=>mockDramaLib.find(d=>`${d.playbookId}-${d.playbookName}-${d.name}-${d.lang}`===k)).filter(Boolean);
+  const ls=p.langs||[];
+  return mockDramaLib.filter(d=>d.status==='已上线'&&(!ls.length||ls.includes(d.lang)));
+}
+// 一次运行里该单元没跑出来的短剧，逐条给失败类型
+function mockFailItems(u){
+  const ds=pkgDramas(u.dramaPkgId).slice(),out=[];
+  for(let n=1+Math.floor(Math.random()*3);n>0&&ds.length;n--){
+    const d=ds.splice(Math.floor(Math.random()*ds.length),1)[0];
+    out.push({dramaId:dramaSnowId(d),dramaName:d.name,type:UNIT_FAIL[Math.floor(Math.random()*UNIT_FAIL.length)]});
+  }
+  return out;
 }
 const executionUnits=[];
-const taskRuns={};   // taskId -> [{batchId,at,unitIds}] 每轮调度；unitIds 只含本轮有产出的单元
-const unitRuns={};   // unitId -> [{batchId,at,counts,failReason}] 倒序；没产出的轮次不记
-let unitBatchSeq=0;
+const taskRuns={};   // taskId -> [{at,unitIds}] 每轮调度；unitIds 只含本轮有产出的单元
+const unitRuns={};   // unitId -> [{runId,at,counts,fails}] 倒序；运行记录从属于单元，每跑一轮一条
+let unitRunSeq=0;
 autoTasks.forEach((t,ti)=>{
   const runs=[];
   t.mediaRows.forEach(mr=>t.dramaPkgIds.forEach(did=>t.materialPkgIds.forEach(mid=>{
@@ -2792,18 +2819,19 @@ autoTasks.forEach((t,ti)=>{
   // 生效时长决定跑了多少轮；按任务间隔倒推，保证时间严格倒序（[0] 为最近一次）
   const batchCount=2+Math.floor(Math.random()*5);
   const end=new Date(2026,5,24,Math.floor(Math.random()*24),Math.floor(Math.random()*60),0);
-  const base=unitBatchSeq;unitBatchSeq+=batchCount;
+  const base=unitRunSeq;unitRunSeq+=batchCount*usable.length;
   for(let b=0;b<batchCount;b++){
     const d=new Date(end.getTime()-b*t.interval*60000);
     const at=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:00`;
-    const batchId=base+batchCount-b,unitIds=[];
-    usable.forEach(u=>{
+    const unitIds=[];
+    usable.forEach((u,k)=>{
       if(Math.random()>.85)return;                              // 本轮未轮到该单元，不记
       const counts=mockRunCounts();
-      (unitRuns[u.id]=unitRuns[u.id]||[]).push({batchId,at,counts,failReason:runHasFail(counts)?UNIT_FAIL[Math.floor(Math.random()*UNIT_FAIL.length)]:''});
+      const runId=snowId('210822651181',base+(batchCount-1-b)*usable.length+k);
+      (unitRuns[u.id]=unitRuns[u.id]||[]).push({runId,at,counts,fails:runHasFail(counts)?mockFailItems(u):[]});
       unitIds.push(u.id);
     });
-    runs.push({batchId,at,unitIds});
+    runs.push({at,unitIds});
   }
   taskRuns[t.id]=runs;
 });
@@ -2816,11 +2844,11 @@ function unitHasDisabledPkg(u){
 function unitRunsOf(unitId){return unitRuns[unitId]||[]}
 function latestRunTime(unitId){const r=unitRunsOf(unitId)[0];return r?r.at:'-'}
 function taskRunsOf(taskId){return taskRuns[taskId]||[]}
-// 本轮汇总 = 该批次下各单元产出记录的加总
-function batchSummary(run){
-  const total=zeroRunCounts();
-  run.unitIds.forEach(uid=>{const r=unitRunsOf(uid).find(x=>x.batchId===run.batchId);if(r)addRunCounts(total,r.counts)});
-  return runCountInline(total);
+// 任务级：该任务所有单元的运行记录平铺（运行记录从属于单元，不按运行记录整合、不做调度汇总）
+function taskRunRecords(taskId){
+  const out=[];
+  unitsOfTask(taskId).forEach(u=>{unitRunsOf(u.id).forEach(r=>out.push({unitId:u.id,...r}))});
+  return out.sort((a,b)=>a.at===b.at?b.unitId-a.unitId:(a.at<b.at?1:-1));
 }
 let expandedTasks=new Set();
 function toggleUnitRows(taskId){expandedTasks.has(taskId)?expandedTasks.delete(taskId):expandedTasks.add(taskId);renderAutoTasks()}
@@ -3985,18 +4013,18 @@ function openPkgViewOf(selectId){
 }
 function closePkgView(){document.getElementById('pkgViewDrawer').style.display='none'}
 // ==================== 执行历史抽屉 ====================
-// 单元级：该单元逐轮产出；任务级：每轮只给汇总，不列单元。两级都不出现「状态」
+// 单元级：该单元逐轮产出；任务级：该任务全部单元的运行记录平铺。两级都不出现「状态」
 function unitRefText(u){
   const ap=findPkg('account',u.accountPkgId),dp=findPkg('drama',u.dramaPkgId),mp=findPkg('material',u.materialPkgId),mpp=findPkg('media',u.mediaPkgId);
   return `${u.media} · 账户包 ${ap?ap.name:'-'} · 策略包 ${mpp?mpp.name:'-'} · 短剧包 ${dp?dp.name:'-'} · 素材包 ${mp?mp.name:'-'}`;
 }
+function runLevelHeads(){return RUN_LEVELS.map(([,label])=>`<th style="width:${label==='广告系列'?76:66}px">${label}</th>`).join('')}
+function runRecordCell(runId){return `<td><span class="col-name" onclick="openRunLogModal('${runId}')">运行记录</span></td>`}
 function logRows(recs){
   return `<div class="table-wrap"><table><thead><tr>`+
-    `<th style="width:48px">批次</th><th style="width:150px">执行时间</th>`+
-    RUN_LEVELS.map(([,label])=>`<th style="width:${label==='广告系列'?80:70}px">${label}</th>`).join('')+
-    `<th>失败原因</th></tr></thead><tbody>`+
-    recs.map(x=>`<tr><td>${x.batchId}</td><td>${x.at}</td>`+
-      runCountCells(x.counts)+`<td>${x.failReason||'-'}</td></tr>`).join('')+`</tbody></table></div>`;
+    `<th style="width:160px">运行记录ID</th><th style="width:140px">执行时间</th>`+runLevelHeads()+
+    `<th style="width:72px">运行记录</th></tr></thead><tbody>`+
+    recs.map(x=>`<tr><td>${x.runId}</td><td>${x.at}</td>`+runCountCells(x.counts)+runRecordCell(x.runId)).join('')+`</tbody></table></div>`;
 }
 function renderUnitLog(unitId){
   const u=executionUnits.find(x=>x.id===unitId);if(!u)return;
@@ -4015,21 +4043,51 @@ function openUnitLog(unitId){
   renderUnitLog(unitId);
   document.getElementById('unitLogDrawer').style.display='flex';
 }
+// 任务级：该任务所有单元的运行记录平铺排列，不按运行记录整合、不做调度汇总
 function openTaskLog(taskId){
   const t=autoTasks.find(x=>x.id===taskId);if(!t)return;
-  const runs=taskRunsOf(taskId);
+  const recs=taskRunRecords(taskId);
   document.getElementById('taskLogTitle').textContent=`任务 ${taskId} 执行历史`;
   document.getElementById('taskLogBody').innerHTML=`<div class="tip-text" style="margin:0 0 12px;line-height:1.6">执行日志仅保留最近 5 天数据</div>`+
-  (runs.length?runs.map((run,i)=>
-    `<div style="border:1px solid #ebeef5;border-radius:6px;margin-bottom:12px;overflow:hidden">`+
-      `<div style="background:#fafafa;padding:10px 12px;font-size:13px;font-weight:500;border-bottom:1px solid #ebeef5">${run.at} · 第 ${runs.length-i} 次调度</div>`+
-      `<div style="padding:10px 12px;font-size:13px">${batchSummary(run)}</div></div>`
-  ).join(''):'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>');
+  (recs.length?`<div class="table-wrap"><table><thead><tr>`+
+      `<th style="width:66px">单元ID</th><th style="width:160px">运行记录ID</th><th style="width:140px">执行时间</th>`+runLevelHeads()+
+      `<th style="width:72px">运行记录</th></tr></thead><tbody>`+
+      recs.map(r=>`<tr><td>${r.unitId}</td><td>${r.runId}</td><td>${r.at}</td>`+runCountCells(r.counts)+runRecordCell(r.runId)).join('')+
+    `</tbody></table></div>`:'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>');
   document.getElementById('taskLogDrawer').style.display='flex';
 }
 function closeLogDrawer(){
   document.getElementById('unitLogDrawer').style.display='none';
   document.getElementById('taskLogDrawer').style.display='none';
+}
+// ==================== 运行记录明细弹窗 ====================
+// 一条运行记录（从属于某个单元）下没跑出来的短剧逐条列出
+let runLogCtx={runId:''};
+const RUN_LOG_PAGE_SIZE=10;
+function runLogRows(runId){
+  const out=[];
+  executionUnits.forEach(u=>{
+    const r=unitRunsOf(u.id).find(x=>x.runId===runId);
+    if(!r)return;
+    (r.fails||[]).forEach(f=>out.push({taskId:u.taskId,unitId:u.id,...f}));
+  });
+  return out;
+}
+function openRunLogModal(runId){
+  runLogCtx={runId};
+  document.getElementById('runLogModal').style.display='flex';
+  renderRunLogModal(1);
+}
+function closeRunLogModal(){document.getElementById('runLogModal').style.display='none'}
+function renderRunLogModal(page=1){
+  const rows=runLogRows(runLogCtx.runId);
+  document.getElementById('runLogBody').innerHTML=rows.length?
+    `<div class="table-wrap"><table><thead><tr><th style="width:80px">任务ID</th><th style="width:80px">单元ID</th><th style="width:180px">运行记录ID</th><th style="width:200px">短剧ID</th><th>短剧名称</th><th style="width:110px">失败类型</th></tr></thead><tbody>`+
+    rows.slice((page-1)*RUN_LOG_PAGE_SIZE,page*RUN_LOG_PAGE_SIZE).map(r=>
+      `<tr><td>${r.taskId}</td><td>${r.unitId}</td><td>${runLogCtx.runId}</td><td>${r.dramaId}</td><td>${r.dramaName}</td><td><span class="fail-tag">${r.type}</span></td></tr>`).join('')+
+    `</tbody></table></div>`:'<div class="tip-text" style="padding:16px 4px">本次运行无失败记录</div>';
+  if(rows.length)renderPagination('runLogPagination',rows.length,RUN_LOG_PAGE_SIZE,p=>renderRunLogModal(p),page);
+  else document.getElementById('runLogPagination').innerHTML='';
 }
 function copyTask(id){
   const t=autoTasks.find(x=>x.id===id);if(!t)return;
