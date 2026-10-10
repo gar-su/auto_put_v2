@@ -4020,40 +4020,65 @@ function unitRefText(u){
 }
 function runLevelHeads(){return RUN_LEVELS.map(([,label])=>`<th style="width:${label==='广告系列'?76:66}px">${label}</th>`).join('')}
 function runRecordCell(runId){return `<td><span class="col-name" onclick="openRunLogModal('${runId}')">运行记录</span></td>`}
+// 执行记录分页条：左「每页数量」下拉 + 右页码（两个抽屉共用，页码/页量状态各自持有）
+const LOG_PAGE_SIZES=[10,20,50,100];
+function logPager(selId,pageId,onchangeFn,size){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">`+
+    `<select class="condition-select" id="${selId}" style="width:110px" onchange="${onchangeFn}()">`+
+    LOG_PAGE_SIZES.map(n=>`<option value="${n}"${n===size?' selected':''}>${n} 条/页</option>`).join('')+`</select>`+
+    `<div class="pagination" id="${pageId}" style="padding:8px 0"></div></div>`;
+}
 function logRows(recs){
   return `<div class="table-wrap"><table><thead><tr>`+
     `<th style="width:160px">运行记录ID</th><th style="width:140px">执行时间</th>`+runLevelHeads()+
     `<th style="width:72px">运行记录</th></tr></thead><tbody>`+
     recs.map(x=>`<tr><td>${x.runId}</td><td>${x.at}</td>`+runCountCells(x.counts)+runRecordCell(x.runId)).join('')+`</tbody></table></div>`;
 }
-function renderUnitLog(unitId){
-  const u=executionUnits.find(x=>x.id===unitId);if(!u)return;
-  const recs=unitRunsOf(unitId);
+let unitLogUnitId=0,unitLogPage=1,unitLogSize=10;
+function changeUnitLogPageSize(){unitLogSize=+document.getElementById('unitLogPageSize').value;unitLogPage=1;renderUnitLog()}
+function renderUnitLog(){
+  const u=executionUnits.find(x=>x.id===unitLogUnitId);if(!u)return;
+  const recs=unitRunsOf(unitLogUnitId);
+  unitLogPage=Math.min(unitLogPage,Math.max(1,Math.ceil(recs.length/unitLogSize)));
+  const start=(unitLogPage-1)*unitLogSize;
   document.getElementById('unitLogBody').innerHTML=
     `<div class="drawer-section-title">单元引用</div>`+
     `<div class="form-item"><label>单元 ID</label><div class="readonly-value">${u.id}（任务 ${u.taskId}）</div></div>`+
     `<div class="form-item"><label>引用</label><div class="readonly-value muted">${unitRefText(u)}</div></div>`+
     `<div class="drawer-section-title">执行历史（${recs.length}）<span class="tip-text" style="font-weight:400"> · 三列为各层 成功 / 失败 条数，未产出的轮次不记</span></div>`+
     `<div class="tip-text" style="margin:0 0 12px;line-height:1.6">执行日志仅保留最近 5 天数据</div>`+
-    (recs.length?logRows(recs):'<div class="tip-text" style="padding:16px 4px">该单元暂无执行记录</div>');
+    (recs.length?logRows(recs.slice(start,start+unitLogSize))+logPager('unitLogPageSize','unitLogPagination','changeUnitLogPageSize',unitLogSize)
+      :'<div class="tip-text" style="padding:16px 4px">该单元暂无执行记录</div>');
+  if(recs.length)renderPagination('unitLogPagination',recs.length,unitLogSize,p=>{unitLogPage=p;renderUnitLog()},unitLogPage);
 }
 function openUnitLog(unitId){
   const u=executionUnits.find(x=>x.id===unitId);if(!u)return;
+  unitLogUnitId=unitId;unitLogPage=1;
   document.getElementById('unitLogTitle').textContent=`单元 ${unitId} 执行历史`;
-  renderUnitLog(unitId);
+  renderUnitLog();
   document.getElementById('unitLogDrawer').style.display='flex';
 }
 // 任务级：该任务所有单元的运行记录平铺排列，不按运行记录整合、不做调度汇总
-function openTaskLog(taskId){
-  const t=autoTasks.find(x=>x.id===taskId);if(!t)return;
-  const recs=taskRunRecords(taskId);
-  document.getElementById('taskLogTitle').textContent=`任务 ${taskId} 执行历史`;
+let taskLogTaskId=0,taskLogPage=1,taskLogSize=10;
+function changeTaskLogPageSize(){taskLogSize=+document.getElementById('taskLogPageSize').value;taskLogPage=1;renderTaskLog()}
+function renderTaskLog(){
+  const recs=taskRunRecords(taskLogTaskId);
+  taskLogPage=Math.min(taskLogPage,Math.max(1,Math.ceil(recs.length/taskLogSize)));
+  const start=(taskLogPage-1)*taskLogSize;
   document.getElementById('taskLogBody').innerHTML=`<div class="tip-text" style="margin:0 0 12px;line-height:1.6">执行日志仅保留最近 5 天数据</div>`+
   (recs.length?`<div class="table-wrap"><table><thead><tr>`+
       `<th style="width:66px">单元ID</th><th style="width:160px">运行记录ID</th><th style="width:140px">执行时间</th>`+runLevelHeads()+
       `<th style="width:72px">运行记录</th></tr></thead><tbody>`+
-      recs.map(r=>`<tr><td>${r.unitId}</td><td>${r.runId}</td><td>${r.at}</td>`+runCountCells(r.counts)+runRecordCell(r.runId)).join('')+
-    `</tbody></table></div>`:'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>');
+      recs.slice(start,start+taskLogSize).map(r=>`<tr><td>${r.unitId}</td><td>${r.runId}</td><td>${r.at}</td>`+runCountCells(r.counts)+runRecordCell(r.runId)).join('')+
+    `</tbody></table></div>`+logPager('taskLogPageSize','taskLogPagination','changeTaskLogPageSize',taskLogSize)
+    :'<div class="tip-text" style="padding:16px 4px">该任务暂无执行记录</div>');
+  if(recs.length)renderPagination('taskLogPagination',recs.length,taskLogSize,p=>{taskLogPage=p;renderTaskLog()},taskLogPage);
+}
+function openTaskLog(taskId){
+  if(!autoTasks.find(x=>x.id===taskId))return;
+  taskLogTaskId=taskId;taskLogPage=1;
+  document.getElementById('taskLogTitle').textContent=`任务 ${taskId} 执行历史`;
+  renderTaskLog();
   document.getElementById('taskLogDrawer').style.display='flex';
 }
 function closeLogDrawer(){
