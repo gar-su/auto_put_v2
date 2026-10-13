@@ -363,6 +363,15 @@ tr.unit-row:hover>td{background:#f5f7fa}
 .account-select-table .added-tag{color:#67c23a;font-size:13px}
 .account-select-table-wrap{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:4px}
 
+/* 账户搜索：单框 / 批量 双模式 */
+.ap-search-group{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
+.ap-search-group .input-text{flex:1;min-width:0}
+.ap-batch-btn{flex:none;height:32px;padding:0 10px;font-size:13px;color:var(--primary);background:var(--white);border:1px solid #dcdfe6;border-radius:4px;cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s}
+.ap-batch-btn:hover{border-color:var(--primary)}
+.ap-batch-btn.active{background:var(--primary);border-color:var(--primary);color:var(--white)}
+.ap-batch-input{height:56px;padding:6px 12px;line-height:20px;resize:vertical;font-family:inherit;box-sizing:border-box}
+.ap-unmatched{color:var(--danger);cursor:help}
+
 /* 已选账户 */
 .selected-accounts-area{margin-top:12px;padding:8px 12px;background:#f5f7fa;border-radius:4px;font-size:13px;color:var(--text);min-height:36px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .selected-account-tag{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-size:12px;display:flex;align-items:center;gap:6px}
@@ -858,8 +867,16 @@ tr.unit-row:hover>td{background:#f5f7fa}
       </div>
       <div class="drawer-section-title">账户范围 <span style="font-weight:400;color:var(--text-secondary);font-size:13px">(3465)</span></div>
       <div style="margin-bottom:12px;display:flex;gap:8px">
-        <input type="text" class="input-text" id="apAccountIdSearch" placeholder="搜索账户ID" style="flex:1" oninput="filterAccountList()">
-        <input type="text" class="input-text" id="apAccountSearch" placeholder="搜索账户名" style="flex:1" oninput="filterAccountList()">
+        <div class="ap-search-group">
+          <input type="text" class="input-text" id="apAccountIdSearch" placeholder="搜索账户ID" oninput="filterAccountList()">
+          <textarea class="input-text ap-batch-input" id="apAccountIdBatchSearch" placeholder="批量账户ID，每行一个（也可用逗号分隔）" style="display:none" oninput="filterAccountList()"></textarea>
+          <button type="button" class="ap-batch-btn" id="apAccountIdBatchBtn" onclick="toggleApBatch('id')">批量</button>
+        </div>
+        <div class="ap-search-group">
+          <input type="text" class="input-text" id="apAccountSearch" placeholder="搜索账户名" oninput="filterAccountList()">
+          <textarea class="input-text ap-batch-input" id="apAccountBatchSearch" placeholder="批量账户名，每行一个（也可用逗号分隔）" style="display:none" oninput="filterAccountList()"></textarea>
+          <button type="button" class="ap-batch-btn" id="apAccountBatchBtn" onclick="toggleApBatch('name')">批量</button>
+        </div>
         <select class="condition-select" id="apPageSizeSel" style="width:110px" onchange="changeApPageSize()">
           <option value="10">10 条/页</option>
           <option value="20">20 条/页</option>
@@ -1492,16 +1509,20 @@ document.querySelectorAll('#preconfigInnerNav .nav-tab').forEach(tab=>{
 });
 
 // ==================== 任务表单 ====================
-function openTaskModal(taskId){
+// 表单的第三种态：复制。非空表示「本次提交要克隆这个源任务」，由提交处理器消费、由 openTaskModal 每次打开时重写
+let taskCopyFromId=null;
+function openTaskModal(taskId,asCopy){
   const t=taskId?autoTasks.find(x=>x.id===taskId):null;
+  taskCopyFromId=asCopy&&t?t.id:null;
+  const name=t?(asCopy?'复制-'+t.name:t.name):'';
   document.getElementById('taskModalOverlay').style.display='flex';
-  document.getElementById('taskModalTitle').textContent=t?'编辑自动化任务':'新建自动化任务';
-  document.getElementById('taskName').value=t?t.name:'';
-  document.getElementById('taskNameCount').textContent=(t?t.name:'').length+' / 50';
+  document.getElementById('taskModalTitle').textContent=t?(asCopy?'复制自动化任务':'编辑自动化任务'):'新建自动化任务';
+  document.getElementById('taskName').value=name;
+  document.getElementById('taskNameCount').textContent=name.length+' / 50';
   document.getElementById('executeFrequency').value=t?t.interval:'';
   mediaRows=t&&t.mediaRows?t.mediaRows.map(r=>({...r})):[{media:'',mediaPkgId:'',accountPkgId:''}];
-  multiPkgSel.drama=t?[].concat(t.dramaPkgId):[];
-  multiPkgSel.material=t?[].concat(t.materialPkgId):[];
+  multiPkgSel.drama=t?[].concat(t.dramaPkgIds||t.dramaPkgId):[];
+  multiPkgSel.material=t?[].concat(t.materialPkgIds||t.materialPkgId):[];
   resetEffectiveDate(t?t.effectiveDates:null);
   refreshTaskPkgOptions();
 }
@@ -1887,6 +1908,10 @@ const mockAllAccounts=[
   {id:'994312602786428',name:'FB-HMB-XH-UTC+8-小黑-5'},
 ];
 let apSelectedAccounts=[],apCurrentPage=1,apFilteredData=[],apPageSize=10,apEditingId=null;
+// 账户搜索的两种模式：单框=模糊包含，批量=按分隔符切分后整值全等（见 filterAccountList）
+const AP_SEARCH_SLOTS={id:{input:'apAccountIdSearch',batch:'apAccountIdBatchSearch',btn:'apAccountIdBatchBtn'},
+  name:{input:'apAccountSearch',batch:'apAccountBatchSearch',btn:'apAccountBatchBtn'}};
+let apBatchMode={id:false,name:false},apBatchMiss=[];
 let apParties={beneficiary:[],sponsor:[]};
 const apAccountBody=document.getElementById('apAccountTableBody'),apAccountPagination=document.getElementById('apAccountPagination');
 
@@ -1998,6 +2023,7 @@ function openAccountPackageDrawer(editId){
   apSelectedAccounts=pkg?mockAllAccounts.filter(a=>pkg.accounts.includes(a.id)):[];
   apCurrentPage=1;apFilteredData=mockAllAccounts;
   document.getElementById('apAccountSearch').value='';
+  resetApBatchMode();
   updateAccountPage();
   updateApSelectedArea();
 }
@@ -2007,13 +2033,54 @@ function closeAccountPackageDrawer(){
   document.getElementById('apNameCount').textContent='0 / 50';
   document.getElementById('apMedia').value='';
   document.getElementById('apAccountIdSearch').value='';
+  resetApBatchMode();
   apParties={beneficiary:[],sponsor:[]};renderApPartyRows();
   apSelectedAccounts=[];apEditingId=null;
 }
+// 批量模式按换行/逗号/分号切分（不含普通空格——账户名本身可能带空格，如 "Lin Hong"），
+// trim 后整值全等（账户名比较忽略大小写）；单框模式维持原有模糊包含
+function apSplitVals(v){return v.split(/[,，;；\r\n]+/).map(s=>s.trim()).filter(Boolean)}
+function apSlotVals(slot){
+  const c=AP_SEARCH_SLOTS[slot];
+  if(apBatchMode[slot])return apSplitVals(document.getElementById(c.batch).value);
+  const v=document.getElementById(c.input).value;
+  return slot==='id'?v.trim():v.toLowerCase();
+}
+function apSlotHit(a,slot){
+  const v=apSlotVals(slot);
+  if(apBatchMode[slot])return !v.length||(slot==='id'?v.includes(a.id):v.some(x=>x.toLowerCase()===a.name.toLowerCase()));
+  return !v||(slot==='id'?a.id.includes(v):a.name.toLowerCase().includes(v));
+}
+// 该槽位批量输入里、在账户池中一条都没命中的值（回告用户哪几个白粘了）
+function apSlotMissVals(slot){
+  if(!apBatchMode[slot])return [];
+  return apSlotVals(slot).filter(v=>!mockAllAccounts.some(a=>slot==='id'?a.id===v:a.name.toLowerCase()===v.toLowerCase()));
+}
+function toggleApBatch(slot){
+  const c=AP_SEARCH_SLOTS[slot],on=apBatchMode[slot]=!apBatchMode[slot];
+  const input=document.getElementById(c.input),batch=document.getElementById(c.batch),btn=document.getElementById(c.btn);
+  input.value='';batch.value=''; // 两种模式匹配语义不同，切换时清值，避免把模糊词当精确值误读
+  input.style.display=on?'none':'';
+  batch.style.display=on?'':'none';
+  btn.textContent=on?'单个':'批量';
+  btn.classList.toggle('active',on);
+  filterAccountList();
+}
+// 抽屉不可重入，开/关都要把两个槽位复位成单框模式
+function resetApBatchMode(){
+  Object.keys(AP_SEARCH_SLOTS).forEach(slot=>{
+    const c=AP_SEARCH_SLOTS[slot];
+    apBatchMode[slot]=false;
+    document.getElementById(c.batch).value='';
+    document.getElementById(c.batch).style.display='none';
+    document.getElementById(c.input).style.display='';
+    const btn=document.getElementById(c.btn);btn.textContent='批量';btn.classList.remove('active');
+  });
+  apBatchMiss=[];
+}
 function filterAccountList(){
-  const q=document.getElementById('apAccountSearch').value.toLowerCase();
-  const qid=document.getElementById('apAccountIdSearch').value.trim();
-  apFilteredData=mockAllAccounts.filter(a=>(!q||a.name.toLowerCase().includes(q))&&(!qid||a.id.includes(qid)));
+  apBatchMiss=apSlotMissVals('id').concat(apSlotMissVals('name'));
+  apFilteredData=mockAllAccounts.filter(a=>apSlotHit(a,'id')&&apSlotHit(a,'name'));
   apCurrentPage=1;updateAccountPage();
 }
 function changeApPageSize(){apPageSize=+document.getElementById('apPageSizeSel').value;apCurrentPage=1;updateAccountPage()}
@@ -2042,7 +2109,7 @@ function updateAccountPage(){
   const psSel=document.getElementById('apPageSizeSel');
   if(psSel&&psSel.value!==String(apPageSize))psSel.value=String(apPageSize);
   const tp=Math.ceil(data.length/apPageSize);
-  let h=`<span>共 ${data.length} 条</span>`;
+  let h=`<span>共 ${data.length} 条</span>`+(apBatchMiss.length?`<span class="ap-unmatched" title="${apEsc(apBatchMiss.join('、'))}">（未匹配 ${apBatchMiss.length} 个）</span>`:'');
   h+=`<button class="page-btn" ${apCurrentPage<=1?'disabled':''} onclick="apCurrentPage--;updateAccountPage()">&lt;</button>`;
   const pEnd=Math.min(tp,5),pStart=Math.max(1,apCurrentPage-2);
   for(let i=pStart;i<=Math.min(pStart+4,tp);i++)h+=`<button class="page-btn${i===apCurrentPage?' active':''}" onclick="apCurrentPage=${i};updateAccountPage()">${i}</button>`;
@@ -2736,7 +2803,10 @@ document.getElementById('autoTaskForm').addEventListener('submit',function(e){e.
     campaignLimit,accountCount};
   console.log('提交数据：',formData);
   console.log('执行单元：',formData.mediaRows.length*formData.dramaPkgIds.length*formData.materialPkgIds.length+' 个');
-  alert('任务创建成功！');closeTaskModal()});
+  // 复制态：同样跑完全部校验，再把源任务克隆成新任务（非复制态保持原有回告）
+  if(taskCopyFromId){const src=autoTasks.find(x=>x.id===taskCopyFromId);if(src)applyTaskCopy(src,taskName);}
+  else alert('任务创建成功！');
+  closeTaskModal()});
 
 // ==================== 表格渲染 ====================
 function renderTable(bodyId,data,cols,pageSize,ops,page,expand){page=page||1;const start=(page-1)*pageSize,pageData=data.slice(start,start+pageSize);document.getElementById(bodyId).innerHTML=pageData.map(row=>{const ok=row.uploadStatus!=='上传成功';let h='<tr><td><input type="checkbox" class="row-check" data-id="'+row.id+'"'+(ok?'':' disabled')+'></td>';cols.forEach(col=>{if(typeof col==='string')h+=`<td>${row[col]||''}</td>`;else h+=col.render?`<td>${col.render(row)}</td>`:`<td>${row[col.key]||''}</td>`});if(ops){h+='<td>';if(typeof ops==='function')h+=ops(row);else ops.forEach(o=>h+=`<button class="btn btn-text btn-sm"${ok?'':' disabled style="color:#c0c4cc;cursor:not-allowed"'} ${o.onclick?`onclick="${o.onclick(row)}"`:''}>${o.label}</button>`);h+='</td>'}else{h+='<td><button class="btn btn-text btn-sm">编辑</button><button class="btn btn-text btn-sm" style="color:#f56c6c">删除</button></td>'}h+='</tr>';if(expand&&expandedTasks&&expandedTasks.has(row.id))h+=expand(row);return h}).join('')}
@@ -4114,9 +4184,12 @@ function renderRunLogModal(page=1){
   if(rows.length)renderPagination('runLogPagination',rows.length,RUN_LOG_PAGE_SIZE,p=>renderRunLogModal(p),page);
   else document.getElementById('runLogPagination').innerHTML='';
 }
-function copyTask(id){
-  const t=autoTasks.find(x=>x.id===id);if(!t)return;
-  const copy={...t,id:Math.max(...autoTasks.map(x=>x.id))+1,name:t.name+'-复制',
+// 复制不再直接建任务：拉起任务表单的复制态（名称预填「复制-原名」，其余字段照抄源任务），
+// 校验通过、点「确定」时才在提交处理器里真正落库（见 applyTaskCopy）
+function copyTask(id){openTaskModal(id,true)}
+// 复制态提交：克隆源任务（只复制引用与执行单元，不复制包内容与执行历史）
+function applyTaskCopy(t,name){
+  const copy={...t,id:Math.max(...autoTasks.map(x=>x.id))+1,name,
     mediaRows:(t.mediaRows||[]).map(r=>({...r})),
     dramaPkgIds:[...(t.dramaPkgIds||[t.dramaPkgId])],
     materialPkgIds:[...(t.materialPkgIds||[t.materialPkgId])]};
