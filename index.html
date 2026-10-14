@@ -1635,11 +1635,11 @@ const mockAccountPackages = [
 
 // ==================== 投放策略包（媒体级：投放形态 + 追踪配置 + 线上投放三组字段） ====================
 const mockMediaPackages=[
-  {id:701,name:'Meta-W2A-美区标准',suffix:'_美区',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH001',status:'启用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079052866169409538',pixelId:'像素_A001',dailyBudget:'100',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'25',campaignStatus:'1',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH001) · W2A · 销量 · 单日预算 $100 · 广告花费回报目标 · FB-W2A-全回传策略 · 像素_A001',created:'2026-05-20',updated:'2026-06-22'},
-  {id:702,name:'Meta-H5-东南亚',suffix:'',media:'Meta',bizType:'付费',channelName:'通用默认渠道',channelNo:'CH002',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'H5',h5Link:'2088834631521864302',callbackTemplate:'2080641053732810756',pixelId:'像素_B002',dailyBudget:'80',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'registration',attributionSetting:'1d_view',bidAmount:'18',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'付费 · 通用默认渠道 (CH002) · H5 · 销量 · 单日预算 $80 · 广告花费回报目标 · meta-H5-付费-默认全回传 · 像素_B002',created:'2026-05-22',updated:'2026-06-21'},
+  {id:701,name:'Meta-W2A-美区标准',suffix:'_美区',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH001',status:'启用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079052866169409538',pixelId:'像素_A001',dailyBudget:'100',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionModel:'standard',attributionSetting:'1d_view',bidAmount:'25',campaignStatus:'1',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH001) · W2A · 销量 · 单日预算 $100 · 广告花费回报目标 · FB-W2A-全回传策略 · 像素_A001',created:'2026-05-20',updated:'2026-06-22'},
+  {id:702,name:'Meta-H5-东南亚',suffix:'',media:'Meta',bizType:'付费',channelName:'通用默认渠道',channelNo:'CH002',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'H5',h5Link:'2088834631521864302',callbackTemplate:'2080641053732810756',pixelId:'像素_B002',dailyBudget:'80',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'registration',attributionModel:'standard',attributionSetting:'1d_view',bidAmount:'18',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'付费 · 通用默认渠道 (CH002) · H5 · 销量 · 单日预算 $80 · 广告花费回报目标 · meta-H5-付费-默认全回传 · 像素_B002',created:'2026-05-22',updated:'2026-06-21'},
   {id:703,name:'Meta-直投-日韩',suffix:'_日韩',media:'Meta',bizType:'付费',channelName:'Meta渠道',channelNo:'CH004',status:'启用',objective:'APP_INSTALLS',objectiveLabel:'应用推广',strategy:'直投',callbackTemplate:'2047700585771171842',dailyBudget:'150',bidStrategy:'bid_cap',resultGoal:'app_event_count',conversionEvent:'install',attributionSetting:'1d_view',bidAmount:'12',campaignStatus:'1',mobileStore:'google_play',app:'netshort',appLink:'https://play.google.com/store/apps/details?id=com.netshort',billingEvent:'cpm',multiAdvertiser:'1',callToAction:'continue_watch',deepLink:'0',summary:'付费 · Meta渠道 (CH004) · 直投 · 应用推广 · 单日预算 $150 · 竞价上限 · Meta-直投-IAA扣量V1.0.0',created:'2026-06-01',updated:'2026-06-23'},
   {id:704,name:'TikTok-直投-欧美',suffix:'_欧美',media:'TikTok',bizType:'免费',channelName:'TikTok通用渠道',channelNo:'CH101',status:'启用',objective:'APP_PROMOTION',objectiveLabel:'应用推广',strategy:'直投',selectApp:'netshort',callbackTemplate:'2079053246685057025',smartCampaign:'已开启',campaignType:'app_install',dailyBudget:'120',campaignStatus:'1',optimizationGoal:'install',bidStrategy:'cost_cap',bidAmount:'12',eventCount:'once',placement:'auto',callToAction:'立即观看',userComments:'0',videoDownload:'0',videoShare:'0',summary:'免费 · TikTok通用渠道 (CH101) · 直投 · 应用推广 · 单日预算 $120 · 成本上限 · FB-直投-全回传策略',created:'2026-06-05',updated:'2026-06-24'},
-  {id:705,name:'Meta-W2A-历史归档',suffix:'_归档',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH003',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079055708355629058',pixelId:'像素_E005',dailyBudget:'60',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionSetting:'1d_view',bidAmount:'9',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH003) · W2A · 销量 · 单日预算 $60 · 广告花费回报目标 · FB-W2A-订阅全回传购物最小金额扣2 · 像素_E005',created:'2026-06-08',updated:'2026-06-24'}
+  {id:705,name:'Meta-W2A-历史归档',suffix:'_归档',media:'Meta',bizType:'免费',channelName:'通用默认渠道',channelNo:'CH003',status:'停用',objective:'SALES',objectiveLabel:'销量',strategy:'W2A',h5Link:'',callbackTemplate:'2079055708355629058',pixelId:'像素_E005',dailyBudget:'60',bidStrategy:'roas',resultGoal:'conversion_value',conversionEvent:'purchase',attributionModel:'standard',attributionSetting:'1d_view',bidAmount:'9',campaignStatus:'0',billingEvent:'cpm',multiAdvertiser:'0',callToAction:'continue_watch',deepLink:'0',summary:'免费 · 通用默认渠道 (CH003) · W2A · 销量 · 单日预算 $60 · 广告花费回报目标 · FB-W2A-订阅全回传购物最小金额扣2 · 像素_E005',created:'2026-06-08',updated:'2026-06-24'}
 ];
 
 // ==================== 素材包（媒体无关） ====================
@@ -3441,6 +3441,9 @@ const MP_META_CAMPAIGN=[
   f('bidAmount','出价金额','money','',{required:true,showWhen:['bidStrategy','bid_cap','roas'],placeholder:'请输入'}),
   f('campaignStatus','广告系列状态','btn-group',{启用:'1',暂停:'0'},{required:true,defaultValue:'0'})
 ];
+// Meta 销量：归因模型常驻，紧贴归因设置上方（线上截图 2026-10-14），仅销量有，应用推广不出现
+const MP_META_ATTR_MODEL=f('attributionModel','归因模型','btn-group',{标准:'standard',增量:'incremental'},{required:true,defaultValue:'standard'});
+const MP_META_SALES_CAMPAIGN=MP_META_CAMPAIGN.flatMap(fd=>fd.key==='attributionSetting'?[MP_META_ATTR_MODEL,fd]:[fd]);
 // 广告设置：Meta 两个广告目标共用（线上截图「广告设置」）
 const MP_META_AD=[
   f('billingEvent','计费方式','btn-group',{CPM:'cpm'},{required:true,defaultValue:'cpm'}),
@@ -3495,7 +3498,7 @@ const MP_CHANNELS={
       SALES:{
         label:'销量',
         account:[...MP_BIZ,MP_SALES_STRATEGY,MP_H5_LINK,MP_CALLBACK,MP_PIXEL],
-        campaign:[...MP_META_CAMPAIGN],
+        campaign:MP_META_SALES_CAMPAIGN,
         adGroup:[],
         ad:[...MP_META_AD],
         afterChange({root}){mpMetaAfterChange(this,root)}
