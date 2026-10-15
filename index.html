@@ -514,13 +514,13 @@ tr.unit-row:hover>td{background:#f5f7fa}
   <!-- 前置配置 - 定向包管理 -->
   <div class="page-container" id="page-targeting-package">
     <div class="toolbar">
-      <input type="text" placeholder="请输入定向包名称">
-      <button class="btn btn-default btn-sm">查询</button>
-      <button class="btn btn-default btn-sm">重置</button>
-      <button class="btn btn-primary btn-sm" onclick="openTargetingPackageDrawer()">+ 新增定向包</button>
+      <input type="text" id="tpFilterName" placeholder="请输入定向包名称">
+      <button class="btn btn-default btn-sm" onclick="renderTargetingPackages(1)">搜索</button>
+      <button class="btn btn-default btn-sm" onclick="resetTpFilter()">重置</button>
+      <button class="btn btn-primary btn-sm" onclick="openTargetingPackageDrawer()">新增定向包</button>
     </div>
     <div class="table-wrap"><table>
-      <thead><tr><th><input type="checkbox"></th><th>ID</th><th>定向包名称</th><th>媒体</th><th>定向条件</th><th>引用短剧包</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th style="width:44px"><input type="checkbox"></th><th style="width:70px">ID</th><th>定向包名称</th><th style="width:70px">性别</th><th style="width:100px">年龄范围</th><th style="width:120px">操作系统</th><th style="width:110px">操作</th></tr></thead>
       <tbody id="targetingPackageTableBody"></tbody>
     </table></div>
     <div class="pagination" id="targetingPackagePagination"></div>
@@ -1277,17 +1277,23 @@ tr.unit-row:hover>td{background:#f5f7fa}
 <div class="drawer-overlay" id="targetingDrawer" style="display:none;z-index:1002">
   <div class="drawer">
     <div class="drawer-header">
-      <span id="tpDrawerTitle">选择定向包</span>
+      <span id="tpDrawerTitle">我的定向包</span>
       <span class="drawer-close" onclick="closeTargetingDrawer()">&times;</span>
     </div>
     <!-- 列表视图 -->
     <div class="drawer-body" id="tpListView">
-      <div style="margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTargetingPackageDrawer()">+ 新建定向包</button></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <input type="text" class="input-text" id="tpListKeyword" style="width:200px" placeholder="请输入定向包名称">
+        <button class="btn btn-default btn-sm" onclick="searchTpList()">搜索</button>
+        <button class="btn btn-default btn-sm" onclick="resetTpListSearch()">重置</button>
+        <button class="btn btn-primary btn-sm" onclick="openTargetingPackageDrawer()">新增定向包</button>
+      </div>
       <div id="batchScopeArea" style="display:none;background:#f5f7fa;border-radius:4px;padding:10px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:500;margin-bottom:6px">作用域</div>
         <div id="batchScopeRadios" style="display:flex;gap:20px;font-size:13px"></div>
       </div>
       <div id="tpListContainer"></div>
+      <div class="pagination" id="tpListPagination" style="padding:12px 0 0"></div>
     </div>
     <div class="drawer-footer" id="tpDrawerFooter">
       <button type="button" class="btn-cancel" onclick="closeTargetingDrawer()">取消</button>
@@ -1748,13 +1754,15 @@ const LANG_OPTS=['en','th','id','ja','ko','es','pt','ar','zh'];
 const AGE_MIN_OPTS=[],AGE_MAX_OPTS=[];
 for(let i=18;i<=64;i++){AGE_MIN_OPTS.push(String(i));AGE_MAX_OPTS.push(String(i))}
 AGE_MAX_OPTS.push('65+');
+// 操作系统与媒体解耦，Meta / TikTok 两种媒体统一走 os 字段
+const OS_OPTS=['不限','Android','iOS','Android,iOS'];
 const mockTargetingPackages = [
-  {id:'tp1',name:'兴趣标签',media:'Meta',gender:'不限',ageMin:'18',ageMax:'34',language:'en',device:'所有移动设备',wifiOnly:false,regions:{include:['美国','加拿大','英国'],exclude:[]},created:'2026-01-15',updated:'2026-06-20'},
-  {id:'tp2',name:'行为定向',media:'Meta',gender:'男性',ageMin:'25',ageMax:'54',language:'en',device:'仅Android设备',wifiOnly:true,regions:{include:['美国'],exclude:['中国']},created:'2026-02-10',updated:'2026-06-18'},
-  {id:'tp3',name:'相似人群',media:'Meta',gender:'女性',ageMin:'18',ageMax:'34',language:'ja',device:'仅IOS设备',wifiOnly:false,regions:{include:['日本','韩国'],exclude:[]},created:'2026-03-05',updated:'2026-06-22'},
-  {id:'tp4',name:'广泛匹配',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'',device:'所有移动设备',wifiOnly:false,regions:{include:[],exclude:[]},created:'2026-05-12',updated:'2026-06-24'},
-  {id:'tp5',name:'再营销',media:'Meta',gender:'不限',ageMin:'25',ageMax:'44',language:'en',device:'所有移动设备',wifiOnly:false,regions:{include:['美国','德国'],exclude:[]},created:'2026-04-20',updated:'2026-06-15'},
-  {id:'tp6',name:'中文-港澳台',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'zh',device:'所有移动设备',wifiOnly:false,regions:{include:['中国台湾','中国香港'],exclude:[]},created:'2026-06-05',updated:'2026-06-24'},
+  {id:'tp1',name:'兴趣标签',media:'Meta',gender:'不限',ageMin:'18',ageMax:'34',language:'en',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','加拿大','英国'],exclude:[]},created:'2026-01-15',updated:'2026-06-20'},
+  {id:'tp2',name:'行为定向',media:'Meta',gender:'男性',ageMin:'25',ageMax:'54',language:'en',os:'Android',wifiOnly:true,regions:{include:['美国'],exclude:['中国']},created:'2026-02-10',updated:'2026-06-18'},
+  {id:'tp3',name:'相似人群',media:'Meta',gender:'女性',ageMin:'18',ageMax:'34',language:'ja',os:'iOS',wifiOnly:false,regions:{include:['日本','韩国'],exclude:[]},created:'2026-03-05',updated:'2026-06-22'},
+  {id:'tp4',name:'广泛匹配',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'',os:'Android,iOS',wifiOnly:false,regions:{include:[],exclude:[]},created:'2026-05-12',updated:'2026-06-24'},
+  {id:'tp5',name:'再营销',media:'Meta',gender:'不限',ageMin:'25',ageMax:'44',language:'en',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','德国'],exclude:[]},created:'2026-04-20',updated:'2026-06-15'},
+  {id:'tp6',name:'中文-港澳台',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'zh',os:'Android,iOS',wifiOnly:false,regions:{include:['中国台湾','中国香港'],exclude:[]},created:'2026-06-05',updated:'2026-06-24'},
   {id:'tt1',name:'东南亚-短视频活跃',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'34',language:'th',os:'Android',network:'不限',regions:{include:['泰国','印尼','越南'],exclude:[]},created:'2026-05-08',updated:'2026-06-21'},
   {id:'tt2',name:'日韩-iOS高价值',media:'TikTok',gender:'女性',ageMin:'25',ageMax:'44',language:'ja',os:'iOS',network:'WiFi',regions:{include:['日本','韩国'],exclude:[]},created:'2026-05-18',updated:'2026-06-23'},
   {id:'tt3',name:'欧美-全量',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'65+',language:'en',os:'不限',network:'不限',regions:{include:['美国','英国','德国'],exclude:[]},created:'2026-06-01',updated:'2026-06-24'},
@@ -1812,6 +1820,7 @@ function clearAllTargeting(){
 }
 // ========== 定向包侧边栏 ==========
 let currentTargetingDramaKey=null,batchSelectedIds=[];
+let tpListKeyword='',tpListPage=1,tpListPageSize=10;
 let materialMode='filter',confirmedMaterials=[],materialSelected={},materialFiltered=[],matPage=0;
 function openTargetingDrawer(btn){
   if(btn&&btn.dataset&&btn.dataset.key){
@@ -1819,6 +1828,8 @@ function openTargetingDrawer(btn){
   }else{
     currentTargetingDramaKey='__batch__';batchSelectedIds=[];
   }
+  tpListKeyword='';tpListPage=1;
+  document.getElementById('tpListKeyword').value='';
   document.getElementById('targetingDrawer').style.display='flex';
   showTpList();
 }
@@ -1826,24 +1837,43 @@ function closeTargetingDrawer(){document.getElementById('targetingDrawer').style
 function showTpList(){
   document.getElementById('tpListView').style.display='block';
   const isBatch=currentTargetingDramaKey==='__batch__';
-  document.getElementById('tpDrawerTitle').textContent=isBatch?'一键分配定向包':'选择定向包';
+  document.getElementById('tpDrawerTitle').textContent=isBatch?'一键分配定向包':'我的定向包';
   document.getElementById('batchScopeArea').style.display=isBatch?'block':'none';
   renderTpList();
+}
+function searchTpList(){tpListKeyword=document.getElementById('tpListKeyword').value.trim();tpListPage=1;renderTpList()}
+function resetTpListSearch(){document.getElementById('tpListKeyword').value='';tpListKeyword='';tpListPage=1;renderTpList()}
+function tpAgeRange(tp){return tp.ageMin&&tp.ageMax?tp.ageMin+'-'+tp.ageMax:'-'}
+function tpGotoPage(p){tpListPage=p;renderTpList()}
+function renderTpListPagination(total){
+  const pages=Math.max(1,Math.ceil(total/tpListPageSize));
+  let h=`<span>共 ${total} 条</span><select class="condition-select" style="width:110px;height:28px;padding:2px 8px;font-size:13px;min-width:0" onchange="tpListPageSize=+this.value;tpListPage=1;renderTpList()">`
+    +LOG_PAGE_SIZES.map(n=>`<option value="${n}"${n===tpListPageSize?' selected':''}>${n} 条/页</option>`).join('')+`</select>`
+    +`<button class="page-btn" ${tpListPage<=1?'disabled':''} onclick="tpGotoPage(${tpListPage-1})">&lt;</button>`;
+  for(let i=1;i<=Math.min(pages,5);i++)h+=`<button class="page-btn${i===tpListPage?' active':''}" onclick="tpGotoPage(${i})">${i}</button>`;
+  if(pages>5)h+=`<span>...</span><button class="page-btn" onclick="tpGotoPage(${pages})">${pages}</button>`;
+  h+=`<button class="page-btn" ${tpListPage>=pages?'disabled':''} onclick="tpGotoPage(${tpListPage+1})">&gt;</button>`;
+  document.getElementById('tpListPagination').innerHTML=h;
 }
 function renderTpList(){
   const isBatch=currentTargetingDramaKey==='__batch__';
   const selectedIds=isBatch?batchSelectedIds:(currentTargetingDramaKey?(dramaTargetingMap.get(currentTargetingDramaKey)||[]):[]);
-  document.getElementById('tpListContainer').innerHTML=mockTargetingPackages.map(tp=>{
-    const checked=selectedIds.includes(tp.id);
-    return `<div class="targeting-list-item${checked?' selected':''}" onclick="toggleTpSelection('${tp.id}')">
-      <div><span class="tp-check${checked?' checked':''}">✓</span></div>
-      <div style="flex:1"><div class="tp-name">${tp.name}</div><div class="tp-desc">${tpDesc(tp)}</div></div>
-      <div class="tp-actions">
-        <button class="btn btn-text btn-sm" onclick="event.stopPropagation();openTargetingPackageDrawer('${tp.id}')">编辑</button>
-        <button class="btn btn-text btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteTp('${tp.id}')">删除</button>
-      </div>
-    </div>`;
-  }).join('')||'<div style="text-align:center;padding:32px;color:var(--text-secondary)">暂无定向包，点击上方按钮新建</div>';
+  const rows=tpListKeyword?mockTargetingPackages.filter(tp=>(tp.name||'').includes(tpListKeyword)):mockTargetingPackages;
+  const pages=Math.max(1,Math.ceil(rows.length/tpListPageSize));
+  if(tpListPage>pages)tpListPage=pages;
+  const pageRows=rows.slice((tpListPage-1)*tpListPageSize,tpListPage*tpListPageSize);
+  document.getElementById('tpListContainer').innerHTML=pageRows.length
+    ? `<div class="table-wrap"><table><thead><tr><th style="width:44px"><input type="checkbox"></th><th style="width:70px">ID</th><th>定向包名称</th><th style="width:70px">性别</th><th style="width:100px">年龄范围</th><th style="width:120px">操作系统</th><th style="width:110px">操作</th></tr></thead><tbody>`
+      +pageRows.map(tp=>{
+        const checked=selectedIds.includes(tp.id);
+        return `<tr${checked?' style="background:rgba(64,128,255,.06)"':''} onclick="toggleTpSelection('${tp.id}')">`
+          +`<td><input type="checkbox"${checked?' checked':''} onclick="event.stopPropagation();toggleTpSelection('${tp.id}')"></td>`
+          +`<td>${tp.id}</td><td>${tp.name}</td><td>${tp.gender||'不限'}</td><td>${tpAgeRange(tp)}</td><td>${tp.os||'不限'}</td>`
+          +`<td><button class="btn btn-text btn-sm" onclick="event.stopPropagation();openTargetingPackageDrawer('${tp.id}')">编辑</button>`
+          +`<button class="btn btn-text btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteTp('${tp.id}')">删除</button></td></tr>`;
+      }).join('')+`</tbody></table></div>`
+    : `<div style="text-align:center;padding:32px;color:var(--text-secondary)">${tpListKeyword?'未找到匹配的定向包':'暂无定向包，点击上方按钮新建'}</div>`;
+  renderTpListPagination(rows.length);
   if(isBatch){
     const total=dramaTargetingMap.size,unassigned=Array.from(dramaTargetingMap.values()).filter(pkgs=>pkgs.length===0).length;
     document.getElementById('batchScopeRadios').innerHTML=`<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="batchScope" value="all" checked><span>全部短剧 (${total})</span></label><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="batchScope" value="unassigned"><span>仅未分配的短剧 (${unassigned})</span></label>`;
@@ -2151,8 +2181,8 @@ function tpDesc(tp){
   const parts=[tp.gender&&tp.gender!=='不限'?tp.gender:'',
     tp.ageMin?tp.ageMin+'-'+tp.ageMax:'',
     tp.language?LANG_LABEL[tp.language]||tp.language:'',
-    isMeta?[tp.device&&tp.device!=='所有移动设备'?tp.device:'',tp.wifiOnly?'仅WiFi':''].filter(Boolean).join(' ')
-          :[tp.os&&tp.os!=='不限'?tp.os:'',tp.network&&tp.network!=='不限'?tp.network:''].filter(Boolean).join(' '),
+    tp.os&&tp.os!=='不限'?tp.os:'',
+    isMeta?(tp.wifiOnly?'仅WiFi':''):(tp.network&&tp.network!=='不限'?tp.network:''),
     (tp.regions&&(tp.regions.include||[]).length)?tp.regions.include.length+' 个地区':'不限地区'].filter(Boolean);
   return parts.join(' | ')||'全量定向';
 }
@@ -2165,18 +2195,19 @@ function dpTargetingIds(p){
   return out;
 }
 function tpRefCount(id){return mockDramaPackages.filter(d=>dpTargetingIds(d).includes(String(id))).length}
+function tpFilterRows(){
+  const q=document.getElementById('tpFilterName').value.trim();
+  return q?mockTargetingPackages.filter(tp=>(tp.name||'').includes(q)):mockTargetingPackages;
+}
+function resetTpFilter(){document.getElementById('tpFilterName').value='';renderTargetingPackages(1)}
 function renderTargetingPackages(p=1){
-  const list=mockTargetingPackages,pageSize=10,page=p||1,start=(page-1)*pageSize;
-  document.getElementById('targetingPackageTableBody').innerHTML=list.slice(start,start+pageSize).map(tp=>{
-    const refs=tpRefCount(tp.id);
-    return `<tr><td><input type="checkbox"></td><td>${tp.id}</td>`+
-      `<td><span class="col-name" onclick="openTargetingPackageDrawer('${tp.id}')">${tp.name}</span></td>`+
-      `<td>${tp.media}</td>`+
-      `<td style="max-width:360px;overflow:hidden;text-overflow:ellipsis" title="${tpDesc(tp)}">${tpDesc(tp)}</td>`+
-      `<td>${refs||0}</td><td>${tp.created}</td><td>${tp.updated}</td>`+
-      `<td><button class="btn btn-text btn-sm" onclick="openTargetingPackageDrawer('${tp.id}')">编辑</button>`+
-      `<button class="btn btn-text btn-sm" style="color:#f56c6c" onclick="deleteTp('${tp.id}')">删除</button></td></tr>`;
-  }).join('');
+  const list=tpFilterRows(),pageSize=10,page=p||1,start=(page-1)*pageSize;
+  document.getElementById('targetingPackageTableBody').innerHTML=list.slice(start,start+pageSize).map(tp=>
+    `<tr><td><input type="checkbox"></td><td>${tp.id}</td>`+
+    `<td><span class="col-name" onclick="openTargetingPackageDrawer('${tp.id}')">${tp.name}</span></td>`+
+    `<td>${tp.gender||'不限'}</td><td>${tpAgeRange(tp)}</td><td>${tp.os||'不限'}</td>`+
+    `<td><button class="btn btn-text btn-sm" onclick="openTargetingPackageDrawer('${tp.id}')">编辑</button>`+
+    `<button class="btn btn-text btn-sm" style="color:#f56c6c" onclick="deleteTp('${tp.id}')">删除</button></td></tr>`).join('');
   renderPagination('targetingPackagePagination',list.length,pageSize,p=>renderTargetingPackages(p),page);
 }
 function tpdRequire(){return '<span class="required">*</span>'}
@@ -2220,12 +2251,11 @@ function renderTpdBody(){
   const lang=tpdField('语言',`<select class="input-text" id="tpdLang" style="width:240px"><option value="">请选择</option>`
     +LANG_OPTS.map(l=>`<option value="${l}">${LANG_LABEL[l]}</option>`).join('')+`</select>`);
   const regionPanel=tpdPanel('地区定向信息',regionPickerHtml(isMeta),isMeta);
+  const osField=tpdField('操作系统',tpdBtnGroup('tpdOs',OS_OPTS));
   document.getElementById('tpdBody').innerHTML = isMeta
-    ? ageF+gender+lang
-      +tpdField('移动设备',tpdBtnGroup('tpdDevice',['所有移动设备','仅Android设备','仅IOS设备']))
+    ? ageF+gender+lang+osField
       +tpdField('仅在连接Wi-Fi时',tpdBtnGroup('tpdWifiOnly',['开启','暂停']))
-    : gender+ageF+lang
-      +tpdField('操作系统',tpdBtnGroup('tpdOs',['不限','iOS','Android']))
+    : gender+ageF+lang+osField
       +tpdField('网络环境',tpdBtnGroup('tpdNetwork',['不限','WiFi','4G','5G']));
   document.getElementById('tpdTail').innerHTML = regionPanel;
   bindTpdBody();
@@ -2308,12 +2338,11 @@ function fillTpdForm(tp){
   document.getElementById('tpdAgeMax').value=(tp&&tp.ageMax)||'65+';
   document.getElementById('tpdLang').value=tp?tp.language||'':'';
   setBtnGroup('#tpdGender','value',(tp&&tp.gender)||'不限');
+  setBtnGroup('#tpdOs','value',(tp&&tp.os)||'不限');
   if(!tp)return;
   if(btnVal('#tpdMedia','media')==='Meta'){
-    setBtnGroup('#tpdDevice','value',tp.device||'所有移动设备');
     setBtnGroup('#tpdWifiOnly','value',tp.wifiOnly?'开启':'暂停');
   }else{
-    setBtnGroup('#tpdOs','value',tp.os||'不限');
     setBtnGroup('#tpdNetwork','value',tp.network||'不限');
   }
 }
@@ -2339,13 +2368,12 @@ function submitTargetingPackage(){
   const data={name,media,gender:btnVal('#tpdGender','value'),
     ageMin,ageMax,
     language:document.getElementById('tpdLang').value,
+    os:btnVal('#tpdOs','value'),
     regions:{include:tpdRegions.include.slice(),exclude:tpdRegions.exclude.slice()},
     updated:'2026-09-16'};
   if(isMeta){
-    data.device=btnVal('#tpdDevice','value');
     data.wifiOnly=btnVal('#tpdWifiOnly','value')==='开启';
   }else{
-    data.os=btnVal('#tpdOs','value');
     data.network=btnVal('#tpdNetwork','value');
   }
   if(tpdEditingId){const i=mockTargetingPackages.findIndex(t=>String(t.id)===String(tpdEditingId));mockTargetingPackages[i]={...mockTargetingPackages[i],...data}}
