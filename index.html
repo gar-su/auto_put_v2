@@ -2500,7 +2500,7 @@ function addDpMetricRow(metric){
   row.querySelector('.condition-delete').addEventListener('click',()=>{row.remove();checkDpMetricDuplicate();checkDpMetricLogic()});
   checkDpMetricDuplicate();checkDpMetricLogic();
 }
-document.getElementById('addDpMetric').addEventListener('click',()=>addDpMetricRow());
+document.getElementById('addDpMetric').addEventListener('click',()=>{addDpMetricRow();resetDramaPreview()});
 bindBtnGroup('#dpTimeWindowBtns');
 // 规则字段一改，已展开的短剧预览就作废（同 v1 素材预览的 resetMaterialPreview 语义）
 document.getElementById('dpTimeWindowBtns').addEventListener('click',()=>resetDramaPreview());
@@ -2528,12 +2528,11 @@ function dpMetricText(rows){
 // 按规则：按当前规则里「语言 / 上线时间 / 初次投放时间」过滤短剧库，指标条件只出列、不参与过滤
 // （短剧库没有指标事实数据）；手选清单：列出已选短剧。指标值按条件运算符生成，保证落在条件内。
 let dramaPreviewVisible=false;
-const DRAMA_PREVIEW_PAGE=10;
 function dramaPreviewCols(){
-  const win=btnVal('#dpTimeWindowBtns','window');
-  // 列集合由「指标筛选」的已选指标定义：有这一行就出这一列，不要求填了数值
-  return dpMetricRowsData().map(c=>({label:`${DP_WINDOW_LABEL[win]} ${(DP_METRICS.find(m=>m[0]===c.metric)||[])[1]||c.metric}`,
-    value:d=>dpMetricPreviewValue(d,c,win)}));
+  const win=btnVal('#dpTimeWindowBtns','window'),configured=dpMetricRowsData();
+  // 数据列表默认带全部指标列，不依赖「指标筛选」里配了几条；配了的那条用来约束取值
+  return DP_METRICS.map(m=>({label:`${DP_WINDOW_LABEL[win]} ${m[1]}`,
+    value:d=>dpMetricPreviewValue(d,configured.find(c=>c.metric===m[0])||{metric:m[0],operator:'',values:[]},win)}));
 }
 function dpMetricPreviewValue(d,cond,win){
   const seed=`${d.playbookId}|${d.name}|${d.lang}|${cond.metric}|${win}`;
@@ -2579,9 +2578,9 @@ function renderDramaPreview(){
   if(!data.length){content.innerHTML='<div class="drama-preview-empty">未找到匹配的短剧</div>';return}
   const base=['剧本ID','剧本名称','短剧名称','语言','状态','上线时间','初次投放时间'];
   const cell=d=>[d.playbookId,d.playbookName,d.name,d.lang,d.status,d.onlineAt||'-',d.firstDeliveredAt||'-'];
-  const rows=data.slice(0,DRAMA_PREVIEW_PAGE).map(d=>`<tr>${cell(d).map(v=>`<td>${v}</td>`).join('')}`
+  const rows=data.map(d=>`<tr>${cell(d).map(v=>`<td>${v}</td>`).join('')}`
     +mcols.map(c=>`<td>${c.value(d)}</td>`).join('')+`</tr>`).join('');
-  const foot=data.length>DRAMA_PREVIEW_PAGE?`共 ${data.length} 部短剧，仅展示前 ${DRAMA_PREVIEW_PAGE} 部`:`共 ${data.length} 部短剧`;
+  const foot=`共 ${data.length} 部短剧`;
   content.innerHTML=`<div class="drama-preview-table-wrap"><table class="drama-preview-table"><thead><tr>`
     +base.map(c=>`<th>${c}</th>`).join('')+mcols.map(c=>`<th>${c.label}</th>`).join('')
     +`</tr></thead><tbody>${rows}</tbody></table></div><div class="drama-preview-footer">${foot}</div>`;
