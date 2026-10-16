@@ -1863,11 +1863,11 @@ function renderTpList(){
   if(tpListPage>pages)tpListPage=pages;
   const pageRows=rows.slice((tpListPage-1)*tpListPageSize,tpListPage*tpListPageSize);
   document.getElementById('tpListContainer').innerHTML=pageRows.length
-    ? `<div class="table-wrap"><table><thead><tr><th style="width:44px"><input type="checkbox"></th><th style="width:70px">ID</th><th>定向包名称</th><th style="width:70px">性别</th><th style="width:100px">年龄范围</th><th style="width:120px">操作系统</th><th style="width:110px">操作</th></tr></thead><tbody>`
+    ? `<div class="table-wrap"><table><thead><tr><th style="width:44px"></th><th style="width:70px">ID</th><th>定向包名称</th><th style="width:70px">性别</th><th style="width:100px">年龄范围</th><th style="width:120px">操作系统</th><th style="width:110px">操作</th></tr></thead><tbody>`
       +pageRows.map(tp=>{
         const checked=selectedIds.includes(tp.id);
         return `<tr${checked?' style="background:rgba(64,128,255,.06)"':''} onclick="toggleTpSelection('${tp.id}')">`
-          +`<td><input type="checkbox"${checked?' checked':''} onclick="event.stopPropagation();toggleTpSelection('${tp.id}')"></td>`
+          +`<td><input type="radio" name="tpPick"${checked?' checked':''} onclick="event.stopPropagation();toggleTpSelection('${tp.id}')"></td>`
           +`<td>${tp.id}</td><td>${tp.name}</td><td>${tp.gender||'不限'}</td><td>${tpAgeRange(tp)}</td><td>${tp.os||'不限'}</td>`
           +`<td><button class="btn btn-text btn-sm" onclick="event.stopPropagation();openTargetingPackageDrawer('${tp.id}')">编辑</button>`
           +`<button class="btn btn-text btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteTp('${tp.id}')">删除</button></td></tr>`;
@@ -1880,22 +1880,19 @@ function renderTpList(){
   }
 }
 function toggleTpSelection(tpId){
+  // 单选：点新的行顶掉旧的，点已选中的那行则取消
   if(!currentTargetingDramaKey)return;
   if(currentTargetingDramaKey==='__batch__'){
-    const idx=batchSelectedIds.indexOf(tpId);
-    if(idx>=0)batchSelectedIds.splice(idx,1);else batchSelectedIds.push(tpId);
-    renderTpList();
-    return;
+    batchSelectedIds=batchSelectedIds[0]===tpId?[]:[tpId];
+  }else{
+    const pkgs=dramaTargetingMap.get(currentTargetingDramaKey)||[];
+    dramaTargetingMap.set(currentTargetingDramaKey,pkgs[0]===tpId?[]:[tpId]);
   }
-  const pkgs=dramaTargetingMap.get(currentTargetingDramaKey)||[];
-  const idx=pkgs.indexOf(tpId);
-  if(idx>=0)pkgs.splice(idx,1);else pkgs.push(tpId);
-  dramaTargetingMap.set(currentTargetingDramaKey,pkgs);
   renderTpList();
 }
 function confirmTargetingSelection(){
   if(currentTargetingDramaKey==='__batch__'){
-    if(batchSelectedIds.length===0){alert('请选择至少一个定向包');return}
+    if(batchSelectedIds.length===0){alert('请选择一个定向包');return}
     const scope=document.querySelector('input[name="batchScope"]:checked').value;
     dramaTargetingMap.forEach((pkgs,key)=>{
       if(scope==='all'||(scope==='unassigned'&&pkgs.length===0)){
