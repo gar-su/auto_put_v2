@@ -319,6 +319,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .ms-panel.show{display:block}
 .ms-panel label{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:14px;color:#606266;cursor:pointer;white-space:nowrap}
 .ms-panel label:hover{background:#f5f7fa}
+/* 短剧预览 */
+.drama-preview-section{margin-top:24px;border:1px solid #dcdfe6;border-radius:4px;display:none}
+.drama-preview-section.show{display:block}
+.drama-preview-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #ebeef5;font-size:14px;color:var(--text);font-weight:500}
+.drama-preview-table-wrap{overflow-x:auto}
+.drama-preview-table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+.drama-preview-table th{padding:8px 12px;border-bottom:1px solid #ebeef5;color:var(--text-secondary);font-weight:500;text-align:left;background:#f5f7fa;white-space:nowrap}
+.drama-preview-table td{padding:8px 12px;border-bottom:1px solid #ebeef5;color:var(--text);white-space:nowrap}
+.drama-preview-table tbody tr:hover{background:#f5f7fa}
+.drama-preview-empty{text-align:center;padding:32px;color:var(--text-secondary);font-size:14px}
+.drama-preview-footer{padding:8px 16px;border-top:1px solid #ebeef5;font-size:12px;color:var(--text-secondary);text-align:center}
 .dp-targeting-row{display:flex;align-items:center;gap:12px}
 /* 媒体行与多选包 */
 .media-row{display:flex;align-items:center;gap:8px}
@@ -946,12 +957,7 @@ tr.unit-row:hover>td{background:#f5f7fa}
             <div class="form-control">
               <div class="ms-select" id="dpLang">
                 <div class="ms-trigger" id="dpLangTrigger">不限语言</div>
-                <div class="ms-panel" id="dpLangPanel">
-                  <label><input type="checkbox" value="中文">中文</label>
-                  <label><input type="checkbox" value="英文">英文</label>
-                  <label><input type="checkbox" value="泰文">泰文</label>
-                  <label><input type="checkbox" value="马来文">马来文</label>
-                </div>
+                <div class="ms-panel" id="dpLangPanel"></div>
               </div>
               <div style="color:var(--text-secondary);font-size:12px;margin-top:4px">可多选，不选＝不限语种。定向包按下方的语言分行分配</div>
             </div>
@@ -961,13 +967,6 @@ tr.unit-row:hover>td{background:#f5f7fa}
             <div class="form-control"><div class="condition-group" id="dpMetricGroup"></div>
               <div style="display:flex;align-items:center;gap:16px;margin-top:4px">
                 <div class="add-time-btn" id="addDpMetric">+ 添加条件</div>
-                <div class="input-group" id="dpMetricLogicItem" style="display:none">
-                  <span class="tip-text">条件关系</span>
-                  <div class="btn-group" id="dpMetricLogicBtns">
-                    <button type="button" class="btn-option active" data-logic="and">且</button>
-                    <button type="button" class="btn-option" data-logic="or">或</button>
-                  </div>
-                </div>
               </div>
               <div class="error-tip" id="dpMetricError">不能重复选择相同指标</div>
             </div>
@@ -1007,7 +1006,7 @@ tr.unit-row:hover>td{background:#f5f7fa}
           <div class="drama-search-panel">
             <div class="form-item" id="dramaNamePanel"><label>短剧名称</label><textarea class="drama-textarea" rows="2" placeholder="请输入短剧名称，每行一个" id="dramaNameInput"></textarea></div>
             <div class="form-item" id="playbookPanel" style="display:none"><label>剧本</label><textarea class="drama-textarea" rows="2" placeholder="输入剧本ID或剧本名，每行一个" id="playbookInput"></textarea></div>
-            <div class="form-item" id="dramaLangPanel" style="display:none"><label>语言</label><select class="drama-lang-select" id="dramaLangSelect"><option value="">请选择语言</option><option value="zh">中文</option><option value="en">英文</option><option value="th">泰文</option><option value="ms">马来文</option></select></div>
+            <div class="form-item" id="dramaLangPanel" style="display:none"><label>语言</label><select class="drama-lang-select" id="dramaLangSelect"><option value="">请选择语言</option></select></div>
             <button type="button" class="drama-search-btn" onclick="searchDramas()">搜索</button>
           </div>
           <div id="dramaSearchResult"><div class="drama-placeholder">请输入搜索条件进行搜索</div></div>
@@ -1038,6 +1037,10 @@ tr.unit-row:hover>td{background:#f5f7fa}
           </div>
           <div style="color:var(--text-secondary);font-size:12px;margin-top:4px">按东八区填写，留空表示即刻投放</div></div>
         </div>
+        </div>
+        <div class="drama-preview-section" id="dramaPreviewSection">
+          <div class="drama-preview-header"><span>短剧预览</span><span style="cursor:pointer" onclick="closeDramaPreview()">&times;</span></div>
+          <div id="dramaPreviewContent"><div class="drama-preview-empty">点击「预览短剧」查看匹配结果</div></div>
         </div>
       </div>
 
@@ -1197,6 +1200,7 @@ tr.unit-row:hover>td{background:#f5f7fa}
     </div>
     <div class="drawer-footer">
       <button type="button" class="btn-cancel" onclick="closePkgDrawer()">取消</button>
+      <button type="button" class="btn-cancel" id="btnDramaPreview" onclick="toggleDramaPreview()" style="border-color:var(--primary);color:var(--primary);display:none">预览短剧</button>
       <button type="button" class="btn-submit" onclick="submitPkgDrawer()">确定</button>
     </div>
   </div>
@@ -1659,8 +1663,8 @@ const mockMaterialPackages=[
 // ==================== 短剧包（媒体无关） ====================
 const mockDramaPackages=[
   {id:901,name:'繁花全语种-规则圈选',status:'启用',ruleMode:'rule',langs:[],onlineFrom:'',onlineTo:'',firstFrom:'',firstTo:'',metrics:[],timeWindow:'d7',metricLogic:'and',langTargeting:{'':{Meta:'tp1',TikTok:''}},scheduleTime:'',summary:'按规则 · 不限语言 · 定向:不限→Meta:兴趣标签 · 即刻投放',created:'2026-05-16',updated:'2026-06-20'},
-  {id:902,name:'手选-三体/狂飙',status:'启用',ruleMode:'list',dramaKeys:['L0002-狂飙-狂飙-中文','L0004-三体-三体-中文'],langs:[],metrics:[],timeWindow:'d7',metricLogic:'and',summary:'手选清单 · 2 部短剧',created:'2026-05-24',updated:'2026-06-22'},
-  {id:903,name:'多语种-近期上线',status:'停用',ruleMode:'rule',langs:['中文','泰文'],onlineFrom:'2026-05-01',onlineTo:'',firstFrom:'',firstTo:'',metrics:[{metric:'cac',operator:'<=',values:['50']},{metric:'sub_rate',operator:'between',values:['3','8']}],timeWindow:'d7',metricLogic:'and',langTargeting:{'中文':{Meta:'tp6',TikTok:''},'泰文':{Meta:'',TikTok:'tt1'}},scheduleTime:'2026-07-01T10:00',summary:'按规则 · 中文/泰文 · 近七日 · CAC<=50 且 订阅率 3~8 · 上线时间 2026-05-01 起 · 定向:中文→Meta:中文-港澳台、泰文→TikTok:东南亚-短视频活跃 · 排期 2026-07-01 10:00',created:'2026-06-03',updated:'2026-06-24'},
+  {id:902,name:'手选-三体/狂飙',status:'启用',ruleMode:'list',dramaKeys:['L0002-狂飙-狂飙-简体中文','L0004-三体-三体-简体中文'],langs:[],metrics:[],timeWindow:'d7',metricLogic:'and',summary:'手选清单 · 2 部短剧',created:'2026-05-24',updated:'2026-06-22'},
+  {id:903,name:'多语种-近期上线',status:'停用',ruleMode:'rule',langs:['简体中文','泰语'],onlineFrom:'2026-05-01',onlineTo:'',firstFrom:'',firstTo:'',metrics:[{metric:'cac',operator:'<=',values:['50']},{metric:'sub_rate',operator:'between',values:['3','8']}],timeWindow:'d7',metricLogic:'and',langTargeting:{'简体中文':{Meta:'tp6',TikTok:''},'泰语':{Meta:'',TikTok:'tt1'}},scheduleTime:'2026-07-01T10:00',summary:'按规则 · 简体中文/泰语 · 近七日 · CAC<=50 且 订阅率 3~8 · 上线时间 2026-05-01 起 · 定向:简体中文→Meta:中文-港澳台、泰语→TikTok:东南亚-短视频活跃 · 排期 2026-07-01 10:00',created:'2026-06-03',updated:'2026-06-24'},
 ];
 
 // ==================== 包管理页通用渲染 ====================
@@ -1748,8 +1752,13 @@ function openRefTaskList(pkgId){
 function closeRefTaskList(){document.getElementById('refTaskListOverlay').style.display='none'}
 function pkgRefs(type,id){const key={drama:'dramaPkgId',material:'materialPkgId',media:'mediaPkgId',account:'accountPkgId'}[type];return autoTasks.filter(t=>t[key]===id)}
 
+// 语种单一来源：短剧包圈剧语言、短剧搜索语言、定向包语言、短剧库 mock 的 lang 字段全部取这份。
+// 语言在数据里就是这里的中文/英文文案本身（没有第二套 zh/en 之类的码），改词表即改全站。
+const LANGS=['English','简体中文','繁体中文','日语','韩语','西班牙语','泰语','印尼语','葡萄牙语','法语','德语','意大利语','阿拉伯语','马来西亚语','土耳其语','越南语','印地语'];
+// 已被 LANGS 取代（定向包语言下拉改用 LANGS），保留未删
 const LANG_LABEL={en:'英语',th:'泰语',id:'印尼语',ja:'日语',ko:'韩语',es:'西班牙语',pt:'葡萄牙语',ar:'阿拉伯语',zh:'中文',de:'德语'};
 const MOCK_COUNTRIES=['安道尔','阿联酋','阿富汗','安提瓜岛','安圭拉','阿尔巴尼亚','亚美尼亚','荷属安的列斯群岛','安哥拉','南极洲','阿根廷','美属萨摩亚','奥地利','澳大利亚','阿鲁巴','奥兰群岛','阿塞拜疆','波斯尼亚和黑塞哥维那','巴巴多斯岛','孟加拉国','比利时','布基纳法索','保加利亚','巴林','布隆迪','贝宁','圣巴泰勒米','百慕大','文莱','玻利维亚','博内尔，圣尤斯特歇斯和沙巴','巴西','巴哈马','不丹','布韦岛','博茨瓦纳','伯利兹','加拿大','科科斯（基林）群岛','刚果民主共和国','中非共和国','刚果共和国','瑞士','科特迪瓦','库克群岛','智利','喀麦隆','中国','哥伦比亚','哥斯达黎加','佛得角','库拉索','圣诞岛','塞浦路斯','捷克','德国','吉布提','丹麦','多米尼克','多米尼加共和国','阿尔及利亚','厄瓜多尔','爱沙尼亚','埃及','西撒哈拉','厄立特里亚','西班牙','埃塞俄比亚','芬兰','斐济','福克兰群岛','密克罗尼西亚联邦','法罗群岛','法国','加蓬','英国','格林纳达','格鲁吉亚','法属圭亚那','根西岛','加纳','直布罗陀','格陵兰','冈比亚','几内亚','瓜德罗普岛','赤道几内亚','希腊','南乔治亚岛和南桑威奇群岛','危地马拉','关岛','几内亚比绍共和国','圭亚那','香港','赫德岛和麦克唐纳群岛','洪都拉斯','克罗地亚','海地','匈牙利','印度尼西亚','爱尔兰','以色列','马恩岛','印度','英属印度洋领地','伊拉克','冰岛','意大利','泽西岛','牙买加','约旦','日本','肯尼亚','吉尔吉斯斯坦','柬埔寨','基里巴斯','科摩罗','圣基茨和尼维斯','韩国','科威特','开曼群岛','哈萨克斯坦','老挝','黎巴嫩','圣卢西亚','列支敦士登','斯里兰卡','利比里亚','莱索托','立陶宛','卢森堡','拉脱维亚','利比亞','摩洛哥','摩纳哥','摩尔多瓦','黑山共和国','法属圣马丁','马达加斯加','马绍尔群岛','北马其顿','马里','缅甸','蒙古','澳门','北马里亚纳群岛','马提尼克岛','毛里塔尼亚','蒙特塞拉特','马耳他','毛里求斯','马尔代夫','马拉维','墨西哥','马来西亚','莫桑比克','纳米比亚','新喀里多尼亚','尼日尔','诺福克岛','尼日利亚','尼加拉瓜','荷兰','挪威','尼泊尔','瑙鲁','纽埃','新西兰','阿曼','巴拿马','秘鲁','法属波利尼西亚','巴布亚新几内亚','菲律宾','巴基斯坦','波兰','圣皮埃尔和密克隆','皮特凯恩','波多黎各','巴勒斯坦','葡萄牙','帕劳','巴拉圭','卡塔尔','留尼汪','罗马尼亚','塞尔维亚','卢旺达','沙特阿拉伯','所罗门群岛','塞舌尔','瑞典','新加坡','圣赫勒拿','斯洛文尼亚','斯瓦尔巴群岛和扬马延岛','斯洛伐克','塞拉利昂','圣马力诺','塞内加尔','索马里','苏里南','南苏丹','圣多美和普林西比','萨尔瓦多','荷属圣马丁','叙利亚','斯威士兰','特克斯和凯科斯群岛','乍得','法属南部领地','多哥','泰国','塔吉克斯坦','托克劳','东帝汶','土库曼斯坦','突尼斯','汤加','土耳其','特立尼达和多巴哥','图瓦卢','台湾','坦桑尼亚','乌克兰','乌干达','美国本土外小岛屿','美国','乌拉圭','乌兹别克斯坦','梵蒂冈城','圣文森特和格林纳丁斯','委内瑞拉','英属维尔京群岛','美属维尔京群岛','越南','瓦努阿图','瓦利斯和富图纳群岛','萨摩亚','科索沃','也门','马约特','南非','赞比亚','津巴布韦'];
+// 已被 LANGS 取代（定向包语言下拉改用 LANGS），保留未删
 const LANG_OPTS=['en','th','id','ja','ko','es','pt','ar','zh'];
 const AGE_MIN_OPTS=[],AGE_MAX_OPTS=[];
 for(let i=18;i<=64;i++){AGE_MIN_OPTS.push(String(i));AGE_MAX_OPTS.push(String(i))}
@@ -1757,16 +1766,16 @@ AGE_MAX_OPTS.push('65+');
 // 操作系统与媒体解耦，Meta / TikTok 两种媒体统一走 os 字段
 const OS_OPTS=['不限','Android','iOS','Android,iOS'];
 const mockTargetingPackages = [
-  {id:'tp1',name:'兴趣标签',media:'Meta',gender:'不限',ageMin:'18',ageMax:'34',language:'en',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','加拿大','英国'],exclude:[]},created:'2026-01-15',updated:'2026-06-20'},
-  {id:'tp2',name:'行为定向',media:'Meta',gender:'男性',ageMin:'25',ageMax:'54',language:'en',os:'Android',wifiOnly:true,regions:{include:['美国'],exclude:['中国']},created:'2026-02-10',updated:'2026-06-18'},
-  {id:'tp3',name:'相似人群',media:'Meta',gender:'女性',ageMin:'18',ageMax:'34',language:'ja',os:'iOS',wifiOnly:false,regions:{include:['日本','韩国'],exclude:[]},created:'2026-03-05',updated:'2026-06-22'},
+  {id:'tp1',name:'兴趣标签',media:'Meta',gender:'不限',ageMin:'18',ageMax:'34',language:'English',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','加拿大','英国'],exclude:[]},created:'2026-01-15',updated:'2026-06-20'},
+  {id:'tp2',name:'行为定向',media:'Meta',gender:'男性',ageMin:'25',ageMax:'54',language:'English',os:'Android',wifiOnly:true,regions:{include:['美国'],exclude:['中国']},created:'2026-02-10',updated:'2026-06-18'},
+  {id:'tp3',name:'相似人群',media:'Meta',gender:'女性',ageMin:'18',ageMax:'34',language:'日语',os:'iOS',wifiOnly:false,regions:{include:['日本','韩国'],exclude:[]},created:'2026-03-05',updated:'2026-06-22'},
   {id:'tp4',name:'广泛匹配',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'',os:'Android,iOS',wifiOnly:false,regions:{include:[],exclude:[]},created:'2026-05-12',updated:'2026-06-24'},
-  {id:'tp5',name:'再营销',media:'Meta',gender:'不限',ageMin:'25',ageMax:'44',language:'en',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','德国'],exclude:[]},created:'2026-04-20',updated:'2026-06-15'},
-  {id:'tp6',name:'中文-港澳台',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'zh',os:'Android,iOS',wifiOnly:false,regions:{include:['中国台湾','中国香港'],exclude:[]},created:'2026-06-05',updated:'2026-06-24'},
-  {id:'tt1',name:'东南亚-短视频活跃',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'34',language:'th',os:'Android',network:'不限',regions:{include:['泰国','印尼','越南'],exclude:[]},created:'2026-05-08',updated:'2026-06-21'},
-  {id:'tt2',name:'日韩-iOS高价值',media:'TikTok',gender:'女性',ageMin:'25',ageMax:'44',language:'ja',os:'iOS',network:'WiFi',regions:{include:['日本','韩国'],exclude:[]},created:'2026-05-18',updated:'2026-06-23'},
-  {id:'tt3',name:'欧美-全量',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'65+',language:'en',os:'不限',network:'不限',regions:{include:['美国','英国','德国'],exclude:[]},created:'2026-06-01',updated:'2026-06-24'},
-  {id:'tt4',name:'东南亚-马来语',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'34',language:'ms',os:'Android',network:'不限',regions:{include:['马来西亚','新加坡'],exclude:[]},created:'2026-06-08',updated:'2026-06-24'},
+  {id:'tp5',name:'再营销',media:'Meta',gender:'不限',ageMin:'25',ageMax:'44',language:'English',os:'Android,iOS',wifiOnly:false,regions:{include:['美国','德国'],exclude:[]},created:'2026-04-20',updated:'2026-06-15'},
+  {id:'tp6',name:'中文-港澳台',media:'Meta',gender:'不限',ageMin:'18',ageMax:'65+',language:'简体中文',os:'Android,iOS',wifiOnly:false,regions:{include:['中国台湾','中国香港'],exclude:[]},created:'2026-06-05',updated:'2026-06-24'},
+  {id:'tt1',name:'东南亚-短视频活跃',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'34',language:'泰语',os:'Android',network:'不限',regions:{include:['泰国','印尼','越南'],exclude:[]},created:'2026-05-08',updated:'2026-06-21'},
+  {id:'tt2',name:'日韩-iOS高价值',media:'TikTok',gender:'女性',ageMin:'25',ageMax:'44',language:'日语',os:'iOS',network:'WiFi',regions:{include:['日本','韩国'],exclude:[]},created:'2026-05-18',updated:'2026-06-23'},
+  {id:'tt3',name:'欧美-全量',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'65+',language:'English',os:'不限',network:'不限',regions:{include:['美国','英国','德国'],exclude:[]},created:'2026-06-01',updated:'2026-06-24'},
+  {id:'tt4',name:'东南亚-马来语',media:'TikTok',gender:'不限',ageMin:'18',ageMax:'34',language:'马来西亚语',os:'Android',network:'不限',regions:{include:['马来西亚','新加坡'],exclude:[]},created:'2026-06-08',updated:'2026-06-24'},
 ];
 let dramaTargetingMap = new Map();
 let dramaStatusMap = new Map();
@@ -1803,6 +1812,7 @@ function renderAllDramaRows(){
   list.innerHTML=Array.from(dramaTargetingMap.keys()).map(k=>renderDramaRow(k)).join('');
   document.getElementById('selectedDramasArea').style.display=dramaTargetingMap.size>0?'block':'none';
   refreshDramaTargetingOptions();
+  resetDramaPreview();
 }
 function clearAllDramas(){
   if(!dramaTargetingMap.size)return;
@@ -2246,7 +2256,7 @@ function renderTpdBody(){
     `<select class="input-text" id="tpdAgeMax">${AGE_MAX_OPTS.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>`,true);
   const gender=tpdField('性别',tpdBtnGroup('tpdGender',['不限','男性','女性']));
   const lang=tpdField('语言',`<select class="input-text" id="tpdLang" style="width:240px"><option value="">请选择</option>`
-    +LANG_OPTS.map(l=>`<option value="${l}">${LANG_LABEL[l]}</option>`).join('')+`</select>`);
+    +LANGS.map(l=>`<option value="${l}">${l}</option>`).join('')+`</select>`);
   const regionPanel=tpdPanel('地区定向信息',regionPickerHtml(isMeta),isMeta);
   const osField=tpdField('操作系统',tpdBtnGroup('tpdOs',OS_OPTS));
   document.getElementById('tpdBody').innerHTML = isMeta
@@ -2386,7 +2396,8 @@ document.querySelectorAll('#tpdMedia .btn-option').forEach(b=>b.addEventListener
   tpdRegionTab='include';
   renderTpdBody();
 }));
-const DRAMA_LANG_CODE={中文:'zh',英文:'en',泰文:'th',马来文:'ms'};
+// 语种 → 短剧库语言码，词表与 LANGS 一一对应（当前无调用方，保留未删）
+const DRAMA_LANG_CODE={'English':'en','简体中文':'zh-Hans','繁体中文':'zh-Hant','日语':'ja','韩语':'ko','西班牙语':'es','泰语':'th','印尼语':'id','葡萄牙语':'pt','法语':'fr','德语':'de','意大利语':'it','阿拉伯语':'ar','马来西亚语':'ms','土耳其语':'tr','越南语':'vi','印地语':'hi'};
 let dpLangTargeting=new Map();
 const DP_METRICS=[
   ['cac','CAC','money'],['d0_revenue','D0 归因收入','money'],['d0_pay_users','D0 充值用户数','num'],
@@ -2399,6 +2410,11 @@ const DP_OP=[['>=','>='],['>','>'],['=','='],['<','<'],['<=','<='],['between','�
 const DP_SUFFIX={pct:'%',money:'$'};
 const DP_WINDOW_LABEL={today:'当日',d3:'近三日',d7:'近七日',total:'累计'};
 function dpMetricType(v){const m=DP_METRICS.find(x=>x[0]===v);return m?m[2]:'num'}
+// 语言选项由 LANGS 渲染（短剧包圈剧语言 + 短剧搜索语言），两处共用同一份词表
+function renderLangOptions(){
+  document.getElementById('dpLangPanel').innerHTML=LANGS.map(l=>`<label><input type="checkbox" value="${l}">${l}</label>`).join('');
+  document.getElementById('dramaLangSelect').insertAdjacentHTML('beforeend',LANGS.map(l=>`<option value="${l}">${l}</option>`).join(''));
+}
 function dpSelectedLangs(){return Array.from(document.querySelectorAll('#dpLangPanel input:checked')).map(c=>c.value)}
 function dpSyncLangTrigger(){const l=dpSelectedLangs();document.getElementById('dpLangTrigger').textContent=l.length?l.join('、'):'不限语言'}
 function dpLangTargetingLangs(){
@@ -2410,8 +2426,7 @@ function dpLangTargetingLangs(){
   return dpSelectedLangs();
 }
 // 语言不限时（规则模式未选语种），定向分配按全部语种逐行列出
-const DP_ALL_LANGS=['中文','英文','泰文','马来文'];
-function dpTargetingRowLangs(){const l=dpLangTargetingLangs();return l.length?l:DP_ALL_LANGS}
+function dpTargetingRowLangs(){const l=dpLangTargetingLangs();return l.length?l:LANGS}
 const DP_MEDIA_COLS=['Meta','TikTok'];
 // 每行语言 → {Meta:定向包id, TikTok:定向包id}；某媒体留空表示该语言不投该渠道
 function dpRow(lang){
@@ -2448,7 +2463,7 @@ document.getElementById('dpLangTrigger').addEventListener('click',function(e){
   document.getElementById('dpLangPanel').classList.toggle('show');
 });
 document.addEventListener('click',e=>{const ms=document.getElementById('dpLang');if(!ms.contains(e.target))document.getElementById('dpLangPanel').classList.remove('show')});
-document.querySelectorAll('#dpLangPanel input').forEach(c=>c.addEventListener('change',()=>{dpSyncLangTrigger();refreshDramaTargetingOptions()}));
+document.getElementById('dpLangPanel').addEventListener('change',()=>{dpSyncLangTrigger();refreshDramaTargetingOptions();resetDramaPreview()});
 function dpMetricRowHTML(metric){
   return `<div class="condition-row">`+
     `<select class="condition-select dp-metric">${DP_METRICS.map(m=>`<option value="${m[0]}"${m[0]===metric?' selected':''}>${m[1]}</option>`).join('')}</select>`+
@@ -2466,8 +2481,7 @@ function dpSyncMetricRow(row){
 }
 function checkDpMetricLogic(){
   const n=document.querySelectorAll('#dpMetricGroup .condition-row').length;
-  document.getElementById('dpMetricLogicItem').style.display=n>1?'flex':'none';
-  // 时间窗口仅在有指标条件时出现
+  // 条件关系固定为「且」，不再有且/或切换；本函数现在只管时间窗口显隐
   document.getElementById('dpTimeWindowItem').style.display=n>0?'flex':'none';
 }
 function checkDpMetricDuplicate(){
@@ -2487,7 +2501,11 @@ function addDpMetricRow(metric){
   checkDpMetricDuplicate();checkDpMetricLogic();
 }
 document.getElementById('addDpMetric').addEventListener('click',()=>addDpMetricRow());
-['#dpTimeWindowBtns','#dpMetricLogicBtns'].forEach(bindBtnGroup);
+bindBtnGroup('#dpTimeWindowBtns');
+// 规则字段一改，已展开的短剧预览就作废（同 v1 素材预览的 resetMaterialPreview 语义）
+document.getElementById('dpTimeWindowBtns').addEventListener('click',()=>resetDramaPreview());
+document.getElementById('dpMetricGroup').addEventListener('input',()=>resetDramaPreview());
+['dpOnlineFrom','dpOnlineTo','dpFirstFrom','dpFirstTo'].forEach(id=>document.getElementById(id).addEventListener('change',()=>resetDramaPreview()));
 function dpMetricRowsData(){
   return Array.from(document.querySelectorAll('#dpMetricGroup .condition-row')).map(r=>{
     const operator=r.querySelector('.dp-operator').value;
@@ -2497,31 +2515,117 @@ function dpMetricRowsData(){
     return {metric:r.querySelector('.dp-metric').value,operator,values};
   });
 }
-function dpMetricText(rows,logic){
-  const sep=logic==='or'?' 或 ':' 且 ';
+// 条件之间恒为「且」（且/或切换已取消）
+function dpMetricText(rows){
   return rows.map(r=>{
     const label=(DP_METRICS.find(m=>m[0]===r.metric)||[])[1]||r.metric;
     if(r.operator==='between')return `${label} ${r.values[0]}~${r.values[1]}`;
     return `${label}${r.operator}${r.values[0]}`;
-  }).join(sep);
+  }).join(' 且 ');
+}
+
+// ==================== 短剧预览（形态照搬 auto_put v1 的「素材预览」）====================
+// 按规则：按当前规则里「语言 / 上线时间 / 初次投放时间」过滤短剧库，指标条件只出列、不参与过滤
+// （短剧库没有指标事实数据）；手选清单：列出已选短剧。指标值按条件运算符生成，保证落在条件内。
+let dramaPreviewVisible=false;
+const DRAMA_PREVIEW_PAGE=10;
+function dramaPreviewCols(){
+  const win=btnVal('#dpTimeWindowBtns','window');
+  return dpMetricRowsData().filter(c=>{
+    const a=parseFloat(c.values[0]);
+    return !isNaN(a)&&(c.operator!=='between'||!isNaN(parseFloat(c.values[1])));
+  }).map(c=>({label:`${DP_WINDOW_LABEL[win]} ${(DP_METRICS.find(m=>m[0]===c.metric)||[])[1]||c.metric}`,
+    value:d=>dpMetricPreviewValue(d,c,win)}));
+}
+function dpMetricPreviewValue(d,cond,win){
+  const seed=`${d.playbookId}|${d.name}|${d.lang}|${cond.metric}|${win}`;
+  let h=0;for(let i=0;i<seed.length;i++)h=(h*131+seed.charCodeAt(i))>>>0;
+  const r=(h%997)/997;
+  const a=parseFloat(cond.values[0]),b=parseFloat(cond.values[1]),m=Math.abs(a)||10;
+  let v;
+  if(cond.operator==='between')v=a+r*(b-a);
+  else if(cond.operator==='>=')v=a+r*m*0.5;
+  else if(cond.operator==='>')v=a+(0.1+r*0.5)*m;
+  else if(cond.operator==='<=')v=a-r*m*0.5;
+  else if(cond.operator==='<')v=a-(0.1+r*0.5)*m;
+  else v=a;
+  // 取整方向按运算符选，避免四舍五入把值推出条件外
+  const type=dpMetricType(cond.metric),dec=type==='num'?0:2,p=Math.pow(10,dec);
+  const num=(cond.operator==='>'||cond.operator==='<=')?Math.ceil(v*p)/p
+    :(cond.operator==='<'||cond.operator==='>=')?Math.floor(v*p)/p:Math.round(v*p)/p;
+  return (type==='money'?'$':'')+num.toFixed(dec)+(type==='pct'?'%':'');
+}
+function dpRuleMatchedDramas(){
+  const langs=dpSelectedLangs(),val=id=>document.getElementById(id).value;
+  const inRange=(v,f,t)=>!f&&!t?true:!!(v&&(!f||v>=f)&&(!t||v<=t));
+  return mockDramaLib.filter(d=>d.status!=='待上线'&&(!langs.length||langs.includes(d.lang))
+    &&inRange(d.onlineAt,val('dpOnlineFrom'),val('dpOnlineTo'))
+    &&inRange(d.firstDeliveredAt,val('dpFirstFrom'),val('dpFirstTo')));
+}
+function dpSelectedDramas(){
+  return Array.from(dramaTargetingMap.keys())
+    .map(k=>mockDramaLib.find(x=>k===`${x.playbookId}-${x.playbookName}-${x.name}-${x.lang}`)).filter(Boolean);
+}
+function renderDramaPreview(){
+  const content=document.getElementById('dramaPreviewContent');
+  const isRule=btnVal('#dpRuleModeBtns','mode')==='rule';
+  const data=isRule?dpRuleMatchedDramas():dpSelectedDramas();
+  const mcols=isRule?dramaPreviewCols():[];
+  if(!data.length){content.innerHTML='<div class="drama-preview-empty">未找到匹配的短剧</div>';return}
+  const base=['剧本ID','剧本名称','短剧名称','语言','状态','上线时间','初次投放时间'];
+  const cell=d=>[d.playbookId,d.playbookName,d.name,d.lang,d.status,d.onlineAt||'-',d.firstDeliveredAt||'-'];
+  const rows=data.slice(0,DRAMA_PREVIEW_PAGE).map(d=>`<tr>${cell(d).map(v=>`<td>${v}</td>`).join('')}`
+    +mcols.map(c=>`<td>${c.value(d)}</td>`).join('')+`</tr>`).join('');
+  const foot=data.length>DRAMA_PREVIEW_PAGE?`共 ${data.length} 部短剧，仅展示前 ${DRAMA_PREVIEW_PAGE} 部`:`共 ${data.length} 部短剧`;
+  content.innerHTML=`<div class="drama-preview-table-wrap"><table class="drama-preview-table"><thead><tr>`
+    +base.map(c=>`<th>${c}</th>`).join('')+mcols.map(c=>`<th>${c.label}</th>`).join('')
+    +`</tr></thead><tbody>${rows}</tbody></table></div><div class="drama-preview-footer">${foot}</div>`;
+}
+function toggleDramaPreview(){
+  const section=document.getElementById('dramaPreviewSection'),btn=document.getElementById('btnDramaPreview');
+  if(dramaPreviewVisible){closeDramaPreview();return}
+  dramaPreviewVisible=true;section.classList.add('show');btn.textContent='收起预览';
+  renderDramaPreview();
+}
+function closeDramaPreview(){
+  dramaPreviewVisible=false;
+  document.getElementById('dramaPreviewSection').classList.remove('show');
+  document.getElementById('btnDramaPreview').textContent='预览短剧';
+}
+function resetDramaPreview(){
+  if(dramaPreviewVisible)closeDramaPreview();
+  document.getElementById('dramaPreviewContent').innerHTML='<div class="drama-preview-empty">点击「预览短剧」查看匹配结果</div>';
 }
 
 const mockDramaLib=[
-  {playbookId:'L0001',playbookName:'繁花',name:'繁花',lang:'中文',status:'已上线',onlineAt:'2026-04-18',firstDeliveredAt:'2026-04-20'},
-  {playbookId:'L0001',playbookName:'繁花',name:'Blooming',lang:'英文',status:'已上线',onlineAt:'2026-05-06',firstDeliveredAt:'2026-05-08'},
-  {playbookId:'L0001',playbookName:'繁花',name:'บุษบา',lang:'泰文',status:'已上线',onlineAt:'2026-05-20',firstDeliveredAt:'2026-05-22'},
-  {playbookId:'L0001',playbookName:'繁花',name:'Mekar',lang:'马来文',status:'预上线',onlineAt:'',firstDeliveredAt:''},
-  {playbookId:'L0002',playbookName:'狂飙',name:'狂飙',lang:'中文',status:'已上线',onlineAt:'2026-03-02',firstDeliveredAt:'2026-03-05'},
-  {playbookId:'L0002',playbookName:'狂飙',name:'The Knockout',lang:'英文',status:'预上线',onlineAt:'',firstDeliveredAt:''},
-  {playbookId:'L0003',playbookName:'漫长的季节',name:'漫长的季节',lang:'中文',status:'已上线',onlineAt:'2026-02-14',firstDeliveredAt:'2026-02-16'},
-  {playbookId:'L0003',playbookName:'漫长的季节',name:'The Long Season',lang:'英文',status:'预上线',onlineAt:'',firstDeliveredAt:''},
-  {playbookId:'L0004',playbookName:'三体',name:'三体',lang:'中文',status:'已上线',onlineAt:'2026-01-20',firstDeliveredAt:'2026-01-22'},
-  {playbookId:'L0004',playbookName:'三体',name:'Three-Body',lang:'英文',status:'预上线',onlineAt:'',firstDeliveredAt:''},
-  {playbookId:'L0005',playbookName:'庆余年',name:'庆余年',lang:'中文',status:'已上线',onlineAt:'2026-06-01',firstDeliveredAt:'2026-06-03'},
-  {playbookId:'L0006',playbookName:'琅琊榜',name:'琅琊榜',lang:'中文',status:'已上线',onlineAt:'2026-03-25',firstDeliveredAt:'2026-03-27'},
-  {playbookId:'L0007',playbookName:'知否',name:'知否',lang:'中文',status:'已上线',onlineAt:'2026-04-08',firstDeliveredAt:'2026-04-10'},
-  {playbookId:'L0008',playbookName:'甄嬛传',name:'甄嬛传',lang:'中文',status:'已上线',onlineAt:'2026-05-12',firstDeliveredAt:'2026-05-14'},
-  {playbookId:'L0009',playbookName:'待映剧',name:'待映剧',lang:'中文',status:'待上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0001',playbookName:'繁花',name:'繁花',lang:'简体中文',status:'已上线',onlineAt:'2026-04-18',firstDeliveredAt:'2026-04-20'},
+  {playbookId:'L0001',playbookName:'繁花',name:'Blooming',lang:'English',status:'已上线',onlineAt:'2026-05-06',firstDeliveredAt:'2026-05-08'},
+  {playbookId:'L0001',playbookName:'繁花',name:'บุษบา',lang:'泰语',status:'已上线',onlineAt:'2026-05-20',firstDeliveredAt:'2026-05-22'},
+  {playbookId:'L0001',playbookName:'繁花',name:'Mekar',lang:'马来西亚语',status:'预上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0002',playbookName:'狂飙',name:'狂飙',lang:'简体中文',status:'已上线',onlineAt:'2026-03-02',firstDeliveredAt:'2026-03-05'},
+  {playbookId:'L0002',playbookName:'狂飙',name:'The Knockout',lang:'English',status:'预上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0003',playbookName:'漫长的季节',name:'漫长的季节',lang:'简体中文',status:'已上线',onlineAt:'2026-02-14',firstDeliveredAt:'2026-02-16'},
+  {playbookId:'L0003',playbookName:'漫长的季节',name:'The Long Season',lang:'English',status:'预上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0004',playbookName:'三体',name:'三体',lang:'简体中文',status:'已上线',onlineAt:'2026-01-20',firstDeliveredAt:'2026-01-22'},
+  {playbookId:'L0004',playbookName:'三体',name:'Three-Body',lang:'English',status:'预上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0005',playbookName:'庆余年',name:'庆余年',lang:'简体中文',status:'已上线',onlineAt:'2026-06-01',firstDeliveredAt:'2026-06-03'},
+  {playbookId:'L0006',playbookName:'琅琊榜',name:'琅琊榜',lang:'简体中文',status:'已上线',onlineAt:'2026-03-25',firstDeliveredAt:'2026-03-27'},
+  {playbookId:'L0007',playbookName:'知否',name:'知否',lang:'简体中文',status:'已上线',onlineAt:'2026-04-08',firstDeliveredAt:'2026-04-10'},
+  {playbookId:'L0008',playbookName:'甄嬛传',name:'甄嬛传',lang:'简体中文',status:'已上线',onlineAt:'2026-05-12',firstDeliveredAt:'2026-05-14'},
+  {playbookId:'L0009',playbookName:'待映剧',name:'待映剧',lang:'简体中文',status:'待上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0001',playbookName:'繁花',name:'繁花·繁中',lang:'繁体中文',status:'已上线',onlineAt:'2026-04-25',firstDeliveredAt:'2026-04-28'},
+  {playbookId:'L0001',playbookName:'繁花',name:'咲く花',lang:'日语',status:'已上线',onlineAt:'2026-05-14',firstDeliveredAt:'2026-05-16'},
+  {playbookId:'L0002',playbookName:'狂飙',name:'Tormenta',lang:'西班牙语',status:'已上线',onlineAt:'2026-04-02',firstDeliveredAt:'2026-04-05'},
+  {playbookId:'L0002',playbookName:'狂飙',name:'Cuồng Phong',lang:'越南语',status:'已上线',onlineAt:'2026-05-28',firstDeliveredAt:'2026-05-30'},
+  {playbookId:'L0003',playbookName:'漫长的季节',name:'Musim Panjang',lang:'印尼语',status:'已上线',onlineAt:'2026-03-18',firstDeliveredAt:'2026-03-20'},
+  {playbookId:'L0004',playbookName:'三体',name:'Le Problème à Trois Corps',lang:'法语',status:'已上线',onlineAt:'2026-02-26',firstDeliveredAt:'2026-03-01'},
+  {playbookId:'L0004',playbookName:'三体',name:'Die drei Sonnen',lang:'德语',status:'已上线',onlineAt:'2026-03-09',firstDeliveredAt:'2026-03-12'},
+  {playbookId:'L0005',playbookName:'庆余年',name:'Alegria de Viver',lang:'葡萄牙语',status:'已上线',onlineAt:'2026-06-10',firstDeliveredAt:'2026-06-12'},
+  {playbookId:'L0006',playbookName:'琅琊榜',name:'랑야방',lang:'韩语',status:'已上线',onlineAt:'2026-04-16',firstDeliveredAt:'2026-04-18'},
+  {playbookId:'L0006',playbookName:'琅琊榜',name:'लांग या बैंग',lang:'印地语',status:'预上线',onlineAt:'',firstDeliveredAt:''},
+  {playbookId:'L0007',playbookName:'知否',name:'Sai o No',lang:'意大利语',status:'已上线',onlineAt:'2026-05-02',firstDeliveredAt:'2026-05-05'},
+  {playbookId:'L0008',playbookName:'甄嬛传',name:'الإمبراطورة',lang:'阿拉伯语',status:'已上线',onlineAt:'2026-05-22',firstDeliveredAt:'2026-05-25'},
+  {playbookId:'L0008',playbookName:'甄嬛传',name:'İmparatoriçe',lang:'土耳其语',status:'预上线',onlineAt:'',firstDeliveredAt:''},
 ];
 
 // ==================== 短剧搜索 ====================
@@ -2540,7 +2644,6 @@ function searchDramas(){
   const playbookRaw=document.getElementById('playbookInput').value.trim();
   const lang=document.getElementById('dramaLangSelect').value;
   const result=document.getElementById('dramaSearchResult');
-  const langMap={zh:'中文',en:'英文',th:'泰文',ms:'马来文'};
   const cardFor=d=>`<div class="drama-result-card" data-status="${d.status}"><div class="drama-result-info"><div class="drama-result-item"><span class="label">剧本名称：</span><span class="value">${d.playbookName}</span></div><div class="drama-result-item"><span class="label">剧本ID：</span><span class="value">${d.playbookId}</span></div><div class="drama-result-item"><span class="label">短剧名称：</span><span class="value">${d.name}</span></div><div class="drama-result-item"><span class="label">语言：</span><span class="value">${d.lang}</span></div></div><div class="drama-result-actions"><button class="drama-add-btn" onclick="addDrama(this)">+ 添加到投放</button></div></div>`;
   const eligible=dramas=>dramas.filter(d=>d.status!=='待上线');
   const empty='<div class="drama-placeholder">未找到相关短剧</div>';
@@ -2556,7 +2659,7 @@ function searchDramas(){
     const matched=[];
     playbooks.forEach(pb=>{
       eligible(mockDramaLib).forEach(d=>{
-        if((d.playbookId===pb||d.playbookName===pb)&&(!lang||d.lang===langMap[lang]))matched.push(d);
+        if((d.playbookId===pb||d.playbookName===pb)&&(!lang||d.lang===lang))matched.push(d);
       });
     });
     result.innerHTML=matched.length?matched.map(cardFor).join(''):empty;
@@ -3268,6 +3371,8 @@ function openPkgDrawer(type,id){
   document.getElementById('pkgMedia').value=(p&&p.media)?p.media:'';
   pkgBodyEls().forEach(el=>el.style.display='none');
   document.getElementById('pkgBody-'+type).style.display='';
+  document.getElementById('btnDramaPreview').style.display=type==='drama'?'':'none';
+  resetDramaPreview();
   if(type==='drama')initDramaPkg(p);
   if(type==='material')initMaterialPkg(p);
   if(type==='media')initMediaPkg(p);
@@ -3277,7 +3382,6 @@ function closePkgDrawer(){document.getElementById('pkgDrawer').style.display='no
 function initDramaPkg(p){
   setBtnGroup('#dpRuleModeBtns','mode',p&&p.ruleMode==='list'?'list':'rule');
   setBtnGroup('#dpTimeWindowBtns','window',(p&&p.timeWindow)||'d7');
-  setBtnGroup('#dpMetricLogicBtns','logic',(p&&p.metricLogic)||'and');
   const langs=(p&&p.langs)||[];
   document.querySelectorAll('#dpLangPanel input').forEach(c=>c.checked=langs.includes(c.value));
   dpSyncLangTrigger();
@@ -3314,6 +3418,7 @@ function toggleDramaPkgMode(){
   document.getElementById('dpListFields').style.display=isRule?'none':'';
   // 手选清单模式：短剧已逐部指定，定向包分配与排期都不再需要
   document.getElementById('dpTargetingSection').style.display=isRule?'':'none';
+  resetDramaPreview();
 }
 function initMaterialPkg(p){
   const mode=(p&&p.mode)||'filter';
@@ -4034,11 +4139,10 @@ function submitPkgDrawer(){
       data.firstTo=document.getElementById('dpFirstTo').value;
       data.metrics=dpMetricRowsData();
       data.timeWindow=btnVal('#dpTimeWindowBtns','window');
-      data.metricLogic=btnVal('#dpMetricLogicBtns','logic');
       if(!data.langs.length&&!data.onlineFrom&&!data.onlineTo&&!data.firstFrom&&!data.firstTo&&!data.metrics.length){alert('请至少设置一个圈剧规则维度');return}
       const rangeText=(label,f,t)=>!f&&!t?'':`${label} ${f&&t?`${f} ~ ${t}`:(f?`${f} 起`:`至 ${t}`)}`;
       const parts=['按规则',data.langs.length?data.langs.join('/'):'不限语言'];
-      const mt=dpMetricText(data.metrics,data.metricLogic);if(mt)parts.push(`${DP_WINDOW_LABEL[data.timeWindow]} · ${mt}`);
+      const mt=dpMetricText(data.metrics);if(mt)parts.push(`${DP_WINDOW_LABEL[data.timeWindow]} · ${mt}`);
       const ot=rangeText('上线时间',data.onlineFrom,data.onlineTo);if(ot)parts.push(ot);
       const ft=rangeText('初次投放时间',data.firstFrom,data.firstTo);if(ft)parts.push(ft);
       parts.push(`定向:${dirText}`,scheduleText);
@@ -4246,7 +4350,7 @@ document.getElementById('pkgName').addEventListener('input',function(){document.
 document.getElementById('pkgSuffix').addEventListener('input',function(){document.getElementById('pkgSuffixCount').textContent=this.value.length+' / 10'});
 
 // ==================== 初始化 ====================
-initTaskFilterOptions();refreshTaskPkgOptions();refreshDramaTargetingOptions();applyTaskFilter();renderAllPkgPages();renderTargetingPackages();renderCampaigns();renderAdGroups();renderAds();renderEffectiveDate();
+initTaskFilterOptions();refreshTaskPkgOptions();renderLangOptions();refreshDramaTargetingOptions();applyTaskFilter();renderAllPkgPages();renderTargetingPackages();renderCampaigns();renderAdGroups();renderAds();renderEffectiveDate();
 </script>
 </body>
 </html>

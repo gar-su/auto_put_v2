@@ -134,7 +134,7 @@ kill $CPID 2>/dev/null; pkill -f "user-data-dir=$D/cp"
 
 - 任务只存包引用、不存字段值；改包不回写已建任务，任务下次执行时生效。`copyTask` 明确只复制引用、不复制包内容（但数组字段要深拷贝，否则副本与原任务共享引用）
 - 任务 → 媒体 由所引投放策略包派生（`taskMediaOf`），多媒体行时返回 `Meta / TikTok` 形式；任务上不单独存媒体字段
-- 语言是短剧、短剧包、定向包之间的贯穿键。`DRAMA_LANG_CODE`（中文→zh 等，仅 4 个语种）是唯一映射，`LANG_LABEL` 是它的反向且覆盖面不同，`mockTargetingPackages` 里还混着 `ms` 这种两边都没有的码
+- 语言是短剧、短剧包、定向包之间的贯穿键，词表唯一来源是 `LANGS`（17 个语种：English / 简体中文 / 繁体中文 / 日语 / 韩语 / 西班牙语 / 泰语 / 印尼语 / 葡萄牙语 / 法语 / 德语 / 意大利语 / 阿拉伯语 / 马来西亚语 / 土耳其语 / 越南语 / 印地语）。**语言在数据里就是这份文案本身，没有第二套 `zh`/`en` 码**——`mockDramaLib.lang`、`#dpLangPanel` 勾选值、`#dramaLangSelect` 的 value、`mockTargetingPackages.language`、`dramaTargetingMap` 的 key 尾段全是同一套字符串。加语种只改 `LANGS` 一处，**但要同步补 `mockDramaLib` 里该语种的短剧**，否则按规则选它圈不到任何剧。`DRAMA_LANG_CODE`（语种→语言码）、`LANG_OPTS`、`LANG_LABEL` 现在都没有调用方了，保留未删
 - 包引用只允许两层，包不能引用包
 - 被任务引用的包不可删；被短剧包引用的定向包不可删。`dpTargetingIds()` 是定向包引用判定的唯一入口（删除拦截 `deleteTp` 与引用计数 `tpRefCount` 都走它），**改动短剧包的引用字段时必须同步它**
 - 任务提交的校验：媒体行完整且媒体不重复 → 短剧包/素材包至少各选一个 → 引用包不得停用 → 素材包 `mode==='specify'` 必须配短剧包 `ruleMode==='list'` → 账户包内账户数非空 → 每轮账户数不得超过各账户包中最少的账户数 → 结束条件数值必填、上限与账户数不得小于 1
@@ -144,10 +144,13 @@ kill $CPID 2>/dev/null; pkill -f "user-data-dir=$D/cp"
 
 两种模式：按规则 / 手选清单（`#dpRuleModeBtns`，`toggleDramaPkgMode` 切 `#dpRuleFields`/`#dpListFields`）。
 按规则的维度为语言（下拉多选）、指标筛选、时间窗口、上线时间、初次投放时间；保存时要求至少填一个维度。**仅允许筛选最近 30 天内有消耗的短剧**，这条说明常驻在 `#dpRuleFields` 顶部。
-指标条件行常量是 `DP_METRICS` / `DP_OP` / `DP_SUFFIX`，时间窗口文案是 `DP_WINDOW_LABEL`。**时间窗口只在有指标条件时出现**，显隐并进 `checkDpMetricLogic()`（它同时管条件关系），不要另起一个函数。
-定向包按圈剧语言分行（`renderDpTargetingRows()` → `#dpTargetingRows`），**每行同时容纳 Meta 与 TikTok 两个下拉**，留空表示该媒体不投该语种。`DP_ALL_LANGS` 是语种不限时的分行来源——不限语言要列出全部语种，不是退化成一行「不限」。定向包自身不带语种属性，候选不按语言过滤。手选清单模式下分行语言由已选短剧的语言派生。
+**语种词表只有 `LANGS` 一份**，`#dpLangPanel` 的勾选项与短剧搜索的 `#dramaLangSelect` 都由 `renderLangOptions()` 渲染（面板原本写死的 4 个 checkbox 已删，勾选监听改成面板上的事件委托），**别再把选项写回 HTML**。语种在数据里就是这份文案本身，见「关联关系」一节。
+指标条件行常量是 `DP_METRICS` / `DP_OP` / `DP_SUFFIX`，时间窗口文案是 `DP_WINDOW_LABEL`。**条件之间恒为「且」**——且/或切换已整块移除（`#dpMetricLogicItem` / `#dpMetricLogicBtns` / `dpMetricText` 的 logic 参数 / 保存时的 `metricLogic` 全没了），**别再改回来**；mock 包里遗留的 `metricLogic:'and'` 字段已无人读。**时间窗口只在有指标条件时出现**，显隐并进 `checkDpMetricLogic()`（它现在只剩这一个职责），不要另起一个函数。
+定向包按圈剧语言分行（`renderDpTargetingRows()` → `#dpTargetingRows`），**每行同时容纳 Meta 与 TikTok 两个下拉**，留空表示该媒体不投该语种。语种不限时的分行来源是 `LANGS` 整份词表——不限语言要列出全部语种，不是退化成一行「不限」，所以**「不限语言」的短剧包会渲染 17 行定向分配**，这是预期不是 bug。定向包自身不带语种属性，候选不按语言过滤。手选清单模式下分行语言由已选短剧的语言派生。
 相关助手集中在 `dp*` 前缀（`dpSelectedLangs` / `dpMetricRowsData` / `dpTargetingText` / `refreshDramaTargetingOptions` 等），改规则字段时通常要同时动 `initDramaPkg`、保存分支与摘要拼接三处。
 **注意 `renderDpTargetingRows`（包抽屉，按语言分行）与 `renderAllDramaRows` / `renderDramaRow`（任务表单，按短剧分行）是两套不同的渲染器**，不要混。
+
+**短剧包抽屉自带「预览短剧」**（`#btnDramaPreview` 放在 `#pkgDrawer` 的共用 footer 里，靠 `openPkgDrawer` 按 `type==='drama'` 显隐；预览区 `#dramaPreviewSection` 在 `#pkgBody-drama` 末尾、`#dpTargetingSection` 之后，两种圈剧方式共用）。形态照搬 auto_put v1 的「素材预览」：点按钮展开/收起，点区头 × 或改任一规则字段（语言/指标/时间窗口/上线时间/初次投放时间/圈剧方式/增删短剧）就收起。**按规则模式预览规则命中集**——`dpRuleMatchedDramas()` 只按语言 / 上线时间 / 初次投放时间过滤 `mockDramaLib`（排除 `待上线`），指标条件**只出列、不参与过滤**（短剧库没有指标事实数据），列名带时间窗口（如「近七日 CAC」）；指标值由 `dpMetricPreviewValue()` 从「短剧 + 指标 + 时间窗口」哈希出稳定伪随机值、再按运算符取整方向调整，保证落在条件内且同一次配置下每次渲染一致。**手选清单模式预览已选短剧**（`dpSelectedDramas()` 按 key 反查短剧库，不出指标列）。超 `DRAMA_PREVIEW_PAGE`=10 条只展示前 10 条，底部标总数。收起/重置的接线点：`renderAllDramaRows`（覆盖手选模式的增删短剧）、`toggleDramaPkgMode`、`#dpLangPanel` 的 change、`#dpMetricGroup` 的 input（委托）、`#dpTimeWindowBtns` 的 click、四个日期 input 的 change。
 
 **任务表单里的定向包选择器是独立抽屉**（`openTargetingDrawer` / `showTpList` / `confirmTargetingSelection`），状态挂在 `dramaTargetingMap`。抽屉里是表格 + 名称搜索（`searchTpList` / `resetTpListSearch`，关键词存 `tpListKeyword`）+ 每页数量分页（`tpListPage` / `tpListPageSize`，选项复用 `LOG_PAGE_SIZES`），收集选中态走 `toggleTpSelection`；分页条是抽屉专用的 `renderTpListPagination`（「共 N 条 / N 条/页 / 页码」同排），**没走全站的 `renderPagination`**，因为那个不含条/页下拉。**选中是单选的**——行内是 `name="tpPick"` 的 radio，表头没有全选框，`toggleTpSelection` 只往 `dramaTargetingMap` / `batchSelectedIds` 里放 0 或 1 个元素（再点已选中的那行＝取消）。容器仍是数组，所以 `renderDramaRow` 的 tag、`dpTargetingIds`、`initDramaPkg` 都不用改；**别再把它改成多选**，用户明确否过。批量模式用哨兵 key `'__batch__'` 存在 `currentTargetingDramaKey` 里，选中态另存 `batchSelectedIds`，确认时广播到所有行——读选中态前必须先判 `isBatch`，否则会读到空数组。
 定向包自己的编辑抽屉是另一套：`openTargetingPackageDrawer` / `renderTpdBody` / `bindTpdBody` / `tpd*` 前缀（区域多选、勾选态在 `tpdRegions` / `tpdChecked`）。`mockTargetingPackages` 的 `os`（操作系统）字段**与媒体解耦**，取值统一走 `OS_OPTS`（不限 / Android / iOS / Android,iOS），两种媒体都渲染这个按钮组；媒体各自的字段只剩 Meta 的 `wifiOnly` 与 TikTok 的 `network`。定向包表单不含版位字段。
