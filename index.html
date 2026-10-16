@@ -2531,10 +2531,8 @@ let dramaPreviewVisible=false;
 const DRAMA_PREVIEW_PAGE=10;
 function dramaPreviewCols(){
   const win=btnVal('#dpTimeWindowBtns','window');
-  return dpMetricRowsData().filter(c=>{
-    const a=parseFloat(c.values[0]);
-    return !isNaN(a)&&(c.operator!=='between'||!isNaN(parseFloat(c.values[1])));
-  }).map(c=>({label:`${DP_WINDOW_LABEL[win]} ${(DP_METRICS.find(m=>m[0]===c.metric)||[])[1]||c.metric}`,
+  // 列集合由「指标筛选」的已选指标定义：有这一行就出这一列，不要求填了数值
+  return dpMetricRowsData().map(c=>({label:`${DP_WINDOW_LABEL[win]} ${(DP_METRICS.find(m=>m[0]===c.metric)||[])[1]||c.metric}`,
     value:d=>dpMetricPreviewValue(d,c,win)}));
 }
 function dpMetricPreviewValue(d,cond,win){
@@ -2542,17 +2540,24 @@ function dpMetricPreviewValue(d,cond,win){
   let h=0;for(let i=0;i<seed.length;i++)h=(h*131+seed.charCodeAt(i))>>>0;
   const r=(h%997)/997;
   const a=parseFloat(cond.values[0]),b=parseFloat(cond.values[1]),m=Math.abs(a)||10;
-  let v;
-  if(cond.operator==='between')v=a+r*(b-a);
-  else if(cond.operator==='>=')v=a+r*m*0.5;
-  else if(cond.operator==='>')v=a+(0.1+r*0.5)*m;
-  else if(cond.operator==='<=')v=a-r*m*0.5;
-  else if(cond.operator==='<')v=a-(0.1+r*0.5)*m;
-  else v=a;
-  // 取整方向按运算符选，避免四舍五入把值推出条件外
   const type=dpMetricType(cond.metric),dec=type==='num'?0:2,p=Math.pow(10,dec);
-  const num=(cond.operator==='>'||cond.operator==='<=')?Math.ceil(v*p)/p
-    :(cond.operator==='<'||cond.operator==='>=')?Math.floor(v*p)/p:Math.round(v*p)/p;
+  let num;
+  if(isNaN(a)||(cond.operator==='between'&&isNaN(b))){
+    // 条件没填数值：按指标量纲取一个默认区间，列照出
+    const band={pct:[1,12],money:[5,300],num:[10,5000]}[type]||[10,5000];
+    num=band[0]+r*(band[1]-band[0]);
+  }else{
+    let v;
+    if(cond.operator==='between')v=a+r*(b-a);
+    else if(cond.operator==='>=')v=a+r*m*0.5;
+    else if(cond.operator==='>')v=a+(0.1+r*0.5)*m;
+    else if(cond.operator==='<=')v=a-r*m*0.5;
+    else if(cond.operator==='<')v=a-(0.1+r*0.5)*m;
+    else v=a;
+    // 取整方向按运算符选，避免四舍五入把值推出条件外
+    num=(cond.operator==='>'||cond.operator==='<=')?Math.ceil(v*p)/p
+      :(cond.operator==='<'||cond.operator==='>=')?Math.floor(v*p)/p:Math.round(v*p)/p;
+  }
   return (type==='money'?'$':'')+num.toFixed(dec)+(type==='pct'?'%':'');
 }
 function dpRuleMatchedDramas(){
