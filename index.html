@@ -3672,6 +3672,10 @@ const MP_CHANNELS={
           f('placement','版位','btn-group',{自动版位:'auto',指定版位:'manual'},{required:true,defaultValue:'auto'}),
           f('manualPlacement','指定版位','checkbox-group',[{v:'tiktok',label:'TikTok'},{v:'pangle',label:'Pangle'}],{showWhen:['placement','manual']})
         ],
+        ad:[
+          f('callToAction','行动号召','static','立即观看'),
+          ...MP_TIKTOK_TAIL
+        ],
         afterChange({root}){
           const g=Field.collect(mpFind(this,'optimizationGoal'),root);
           const ct=Field.collect(mpFind(this,'campaignType'),root);
