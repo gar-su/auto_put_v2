@@ -416,6 +416,22 @@ tr.unit-row:hover>td{background:#f5f7fa}
 .material-tag .tag-remove{cursor:pointer;font-size:14px;color:#a0cfff;line-height:1}
 .material-tag .tag-remove:hover{color:#f56c6c}
 .material-empty{color:var(--text-secondary);font-size:13px;padding:4px 0}
+/* 素材标签两级选择 */
+.tag-select-wrap{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:32px}
+.tag-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tag-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:60;display:none;width:520px;padding:8px;background:var(--white);border:1px solid #dcdfe6;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.tag-panel.show{display:block}
+.tag-search{width:100%;height:30px;margin-bottom:8px;font-size:13px}
+.tag-panel-cols{display:flex;height:240px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.tag-col{overflow-y:auto}
+.tag-col-l1{width:200px;flex-shrink:0;border-right:1px solid var(--border)}
+.tag-col-l2{flex:1}
+.tag-col-item{display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden}
+.tag-col-item:hover{background:#f5f7fa}
+.tag-col-item.active{background:#ecf5ff;color:var(--primary)}
+.tag-col-item span{overflow:hidden;text-overflow:ellipsis}
+.tag-col-item .arrow{margin-left:auto;color:var(--text-secondary);flex-shrink:0}
+.tag-col-empty{padding:16px 8px;font-size:13px;color:var(--text-secondary);text-align:center}
 /* 素材选择弹窗 */
 .material-dialog{background:var(--white);border-radius:8px;width:1100px;max-width:95%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 4px 16px rgba(0,0,0,.15)}
 .material-dialog-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);font-size:18px;font-weight:500;flex-shrink:0}
@@ -1070,6 +1086,39 @@ tr.unit-row:hover>td{background:#f5f7fa}
           <button type="button" class="btn-option" data-day="15">15天</button>
           <button type="button" class="btn-option" data-day="30">30天</button>
         </div></div>
+      </div>
+      <div class="form-item">
+        <label>筛选标签</label>
+        <div class="form-control">
+          <div class="tag-select-wrap">
+            <div class="tag-chips" id="tagIncludeChips"></div>
+            <button type="button" class="btn-link" id="tagIncludeTrigger" onclick="toggleTagPanel('include')">+ 选择标签</button>
+            <div class="tag-panel" id="tagIncludePanel">
+              <input type="text" class="input-text tag-search" id="tagIncludeSearch" placeholder="搜索标签" oninput="renderTagPanel('include')">
+              <div class="tag-panel-cols">
+                <div class="tag-col tag-col-l1" id="tagIncludeL1"></div>
+                <div class="tag-col tag-col-l2" id="tagIncludeL2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-item">
+        <label>排除标签</label>
+        <div class="form-control">
+          <div class="tag-select-wrap">
+            <div class="tag-chips" id="tagExcludeChips"></div>
+            <button type="button" class="btn-link" id="tagExcludeTrigger" onclick="toggleTagPanel('exclude')">+ 选择标签</button>
+            <div class="tag-panel" id="tagExcludePanel">
+              <input type="text" class="input-text tag-search" id="tagExcludeSearch" placeholder="搜索标签" oninput="renderTagPanel('exclude')">
+              <div class="tag-panel-cols">
+                <div class="tag-col tag-col-l1" id="tagExcludeL1"></div>
+                <div class="tag-col tag-col-l2" id="tagExcludeL2"></div>
+              </div>
+            </div>
+          </div>
+          <span class="tip-text" style="display:block;line-height:18px;margin-left:0">同一标签同时出现在筛选和排除时，以排除为准</span>
+        </div>
       </div>
       <div class="form-item">
         <label><span class="required">*</span>素材数据筛选</label>
@@ -2917,20 +2966,93 @@ document.querySelectorAll('#materialConditionGroup .condition-delete').forEach(b
 checkMaterialFilterVisible();checkMaterialConditionRequired();
 
 // ==================== 素材库 mock ====================
-const mockMaterialData=[
-  {id:'mat_001',type:'视频',name:'素材_001.mp4',vnName:'Hoa Phồn Hoa',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'椿芽',time:'2026-05-12 13:38:53',user:'运营A',tags:['爆款'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'繁花',lang:'中文',cost:1234,doroi:2.3,d0AdRoi:1.8,d0Iaa:456,compliance:85,oldCompliance:78,created:'2026-05-12',businessType:'免费',media:'Meta'},
-  {id:'mat_002',type:'视频',name:'素材_002.mp4',vnName:'Hoa Phồn Hoa',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'椿芽',time:'2026-05-11 13:38:53',user:'运营B',tags:['新素材'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'Blooming',lang:'英文',cost:856,doroi:1.8,d0AdRoi:1.2,d0Iaa:320,compliance:72,oldCompliance:65,created:'2026-05-11',businessType:'付费',media:'TikTok'},
-  {id:'mat_003',type:'视频',name:'素材_003.mp4',vnName:'Hoa Phồn Hoa',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'檀檀灰',time:'2026-05-10 09:12:40',user:'运营A',tags:['爆款'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'บุษบา',lang:'泰文',cost:2100,doroi:3.1,d0AdRoi:2.5,d0Iaa:780,compliance:91,oldCompliance:88,created:'2026-05-10',businessType:'免费',media:'Meta'},
-  {id:'mat_004',type:'视频',name:'素材_004.mp4',vnName:'Hoa Phồn Hoa',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'檀檀灰',time:'2026-05-13 09:12:40',user:'运营C',tags:['测试'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'Mekar',lang:'马来文',cost:450,doroi:0.9,d0AdRoi:0.6,d0Iaa:180,compliance:58,oldCompliance:42,created:'2026-05-13',businessType:'付费',media:'Meta'},
-  {id:'mat_005',type:'视频',name:'素材_005.mp4',vnName:'Cuồng Phong',w:1080,h:1920,size:'348MB',duration:'00:19:02',source:'繁星',time:'2026-05-09 15:26:10',user:'运营B',tags:['爆款'],script:'狂飙',folder:'短剧库/狂飙',bookId:'L0002',bookName:'狂飙',drama:'狂飙',lang:'中文',cost:3200,doroi:4.5,d0AdRoi:3.8,d0Iaa:1200,compliance:95,oldCompliance:91,created:'2026-05-09',businessType:'付费',media:'TikTok'},
-  {id:'mat_006',type:'视频',name:'素材_006.mp4',vnName:'Cuồng Phong',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'繁星',time:'2026-05-08 15:26:10',user:'运营A',tags:['新素材'],script:'狂飙',folder:'短剧库/狂飙',bookId:'L0002',bookName:'狂飙',drama:'The Knockout',lang:'英文',cost:1890,doroi:2.7,d0AdRoi:2.1,d0Iaa:650,compliance:80,oldCompliance:73,created:'2026-05-08',businessType:'免费',media:'Meta'},
-  {id:'mat_007',type:'视频',name:'素材_007.mp4',vnName:'Mùa Dài Đằng Đẵng',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'椿芽',time:'2026-05-11 11:04:22',user:'运营C',tags:['测试'],script:'漫长的季节',folder:'短剧库/漫长的季节',bookId:'L0003',bookName:'漫长的季节',drama:'漫长的季节',lang:'中文',cost:670,doroi:1.5,d0AdRoi:1.0,d0Iaa:240,compliance:66,oldCompliance:55,created:'2026-05-11',businessType:'免费',media:'TikTok'},
-  {id:'mat_008',type:'视频',name:'素材_008.mp4',vnName:'Mùa Dài Đằng Đẵng',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'椿芽',time:'2026-05-07 11:04:22',user:'运营B',tags:['爆款'],script:'漫长的季节',folder:'短剧库/漫长的季节',bookId:'L0003',bookName:'漫长的季节',drama:'The Long Season',lang:'英文',cost:980,doroi:2.0,d0AdRoi:1.6,d0Iaa:410,compliance:74,oldCompliance:68,created:'2026-05-07',businessType:'付费',media:'Meta'},
-  {id:'mat_009',type:'视频',name:'素材_009.mp4',vnName:'Tam Thể',w:1080,h:1920,size:'347MB',duration:'00:18:59',source:'繁星',time:'2026-05-13 10:42:55',user:'运营A',tags:['爆款','新素材'],script:'三体',folder:'短剧库/三体',bookId:'L0004',bookName:'三体',drama:'三体',lang:'中文',cost:5600,doroi:5.2,d0AdRoi:4.5,d0Iaa:2100,compliance:98,oldCompliance:96,created:'2026-05-13',businessType:'付费',media:'Meta'},
-  {id:'mat_010',type:'视频',name:'素材_010.mp4',vnName:'Tam Thể',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'繁星',time:'2026-05-06 10:42:55',user:'运营B',tags:['新素材'],script:'三体',folder:'短剧库/三体',bookId:'L0004',bookName:'三体',drama:'Three-Body',lang:'英文',cost:4200,doroi:4.8,d0AdRoi:4.0,d0Iaa:1650,compliance:93,oldCompliance:90,created:'2026-05-06',businessType:'免费',media:'TikTok'},
-  {id:'mat_011',type:'视频',name:'素材_011.mp4',vnName:'Khánh Dư Niên',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'檀檀灰',time:'2026-05-12 16:31:47',user:'运营C',tags:['爆款'],script:'庆余年',folder:'短剧库/庆余年',bookId:'L0005',bookName:'庆余年',drama:'庆余年',lang:'中文',cost:1500,doroi:2.9,d0AdRoi:2.2,d0Iaa:580,compliance:82,oldCompliance:76,created:'2026-05-12',businessType:'免费',media:'Meta'},
-  {id:'mat_012',type:'视频',name:'素材_012.mp4',vnName:'Khánh Dư Niên',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'檀檀灰',time:'2026-05-10 16:31:47',user:'运营A',tags:['测试'],script:'庆余年',folder:'短剧库/庆余年',bookId:'L0005',bookName:'庆余年',drama:'Joy of Life',lang:'英文',cost:1100,doroi:2.1,d0AdRoi:1.7,d0Iaa:390,compliance:76,oldCompliance:69,created:'2026-05-10',businessType:'付费',media:'TikTok'}
+const mockMaterialTagTree=[
+  {id:'tg_free',name:'免费素材组',children:[{id:'tg_free_start',name:'免费-起量'},{id:'tg_free_new',name:'免费-新素材'}]},
+  {id:'tg_edge',name:'大尺度素材/擦边',children:[{id:'tg_edge_high',name:'擦边-高消耗'},{id:'tg_edge_test',name:'擦边-测试'}]},
+  {id:'tg_zs1',name:'ZS-LA018-1',children:[{id:'tg_zs1_start',name:'ZS-LA018-起量'},{id:'tg_zs1_new',name:'ZS-LA018-新'}]},
+  {id:'tg_zs2',name:'ZS-LA018-2',children:[{id:'tg_zs2_start',name:'ZS-LA0182-起量'},{id:'tg_zs2_test',name:'ZS-LA0182-测试'}]},
+  {id:'tg_move',name:'移动',children:[{id:'tg_move_test',name:'移动-测试'},{id:'tg_move_new',name:'移动-新素材'}]}
 ];
+const mockMaterialData=[
+  {id:'mat_001',type:'视频',name:'素材_001.mp4',vnName:'Hoa Phồn Hoa',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'椿芽',time:'2026-05-12 13:38:53',user:'运营A',tags:['ZS-LA018-起量'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'繁花',lang:'中文',cost:1234,doroi:2.3,d0AdRoi:1.8,d0Iaa:456,compliance:85,oldCompliance:78,created:'2026-05-12',businessType:'免费',media:'Meta'},
+  {id:'mat_002',type:'视频',name:'素材_002.mp4',vnName:'Hoa Phồn Hoa',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'椿芽',time:'2026-05-11 13:38:53',user:'运营B',tags:['免费-新素材'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'Blooming',lang:'英文',cost:856,doroi:1.8,d0AdRoi:1.2,d0Iaa:320,compliance:72,oldCompliance:65,created:'2026-05-11',businessType:'付费',media:'TikTok'},
+  {id:'mat_003',type:'视频',name:'素材_003.mp4',vnName:'Hoa Phồn Hoa',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'檀檀灰',time:'2026-05-10 09:12:40',user:'运营A',tags:['ZS-LA018-起量','免费-起量'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'บุษบา',lang:'泰文',cost:2100,doroi:3.1,d0AdRoi:2.5,d0Iaa:780,compliance:91,oldCompliance:88,created:'2026-05-10',businessType:'免费',media:'Meta'},
+  {id:'mat_004',type:'视频',name:'素材_004.mp4',vnName:'Hoa Phồn Hoa',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'檀檀灰',time:'2026-05-13 09:12:40',user:'运营C',tags:['移动-测试'],script:'繁花',folder:'短剧库/繁花',bookId:'L0001',bookName:'繁花',drama:'Mekar',lang:'马来文',cost:450,doroi:0.9,d0AdRoi:0.6,d0Iaa:180,compliance:58,oldCompliance:42,created:'2026-05-13',businessType:'付费',media:'Meta'},
+  {id:'mat_005',type:'视频',name:'素材_005.mp4',vnName:'Cuồng Phong',w:1080,h:1920,size:'348MB',duration:'00:19:02',source:'繁星',time:'2026-05-09 15:26:10',user:'运营B',tags:['ZS-LA0182-起量'],script:'狂飙',folder:'短剧库/狂飙',bookId:'L0002',bookName:'狂飙',drama:'狂飙',lang:'中文',cost:3200,doroi:4.5,d0AdRoi:3.8,d0Iaa:1200,compliance:95,oldCompliance:91,created:'2026-05-09',businessType:'付费',media:'TikTok'},
+  {id:'mat_006',type:'视频',name:'素材_006.mp4',vnName:'Cuồng Phong',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'繁星',time:'2026-05-08 15:26:10',user:'运营A',tags:['免费-起量'],script:'狂飙',folder:'短剧库/狂飙',bookId:'L0002',bookName:'狂飙',drama:'The Knockout',lang:'英文',cost:1890,doroi:2.7,d0AdRoi:2.1,d0Iaa:650,compliance:80,oldCompliance:73,created:'2026-05-08',businessType:'免费',media:'Meta'},
+  {id:'mat_007',type:'视频',name:'素材_007.mp4',vnName:'Mùa Dài Đằng Đẵng',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'椿芽',time:'2026-05-11 11:04:22',user:'运营C',tags:['擦边-测试'],script:'漫长的季节',folder:'短剧库/漫长的季节',bookId:'L0003',bookName:'漫长的季节',drama:'漫长的季节',lang:'中文',cost:670,doroi:1.5,d0AdRoi:1.0,d0Iaa:240,compliance:66,oldCompliance:55,created:'2026-05-11',businessType:'免费',media:'TikTok'},
+  {id:'mat_008',type:'视频',name:'素材_008.mp4',vnName:'Mùa Dài Đằng Đẵng',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'椿芽',time:'2026-05-07 11:04:22',user:'运营B',tags:['擦边-高消耗'],script:'漫长的季节',folder:'短剧库/漫长的季节',bookId:'L0003',bookName:'漫长的季节',drama:'The Long Season',lang:'英文',cost:980,doroi:2.0,d0AdRoi:1.6,d0Iaa:410,compliance:74,oldCompliance:68,created:'2026-05-07',businessType:'付费',media:'Meta'},
+  {id:'mat_009',type:'视频',name:'素材_009.mp4',vnName:'Tam Thể',w:1080,h:1920,size:'347MB',duration:'00:18:59',source:'繁星',time:'2026-05-13 10:42:55',user:'运营A',tags:['ZS-LA018-新','ZS-LA0182-测试'],script:'三体',folder:'短剧库/三体',bookId:'L0004',bookName:'三体',drama:'三体',lang:'中文',cost:5600,doroi:5.2,d0AdRoi:4.5,d0Iaa:2100,compliance:98,oldCompliance:96,created:'2026-05-13',businessType:'付费',media:'Meta'},
+  {id:'mat_010',type:'视频',name:'素材_010.mp4',vnName:'Tam Thể',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'繁星',time:'2026-05-06 10:42:55',user:'运营B',tags:['ZS-LA018-新'],script:'三体',folder:'短剧库/三体',bookId:'L0004',bookName:'三体',drama:'Three-Body',lang:'英文',cost:4200,doroi:4.8,d0AdRoi:4.0,d0Iaa:1650,compliance:93,oldCompliance:90,created:'2026-05-06',businessType:'免费',media:'TikTok'},
+  {id:'mat_011',type:'视频',name:'素材_011.mp4',vnName:'Khánh Dư Niên',w:1080,h:1920,size:'350MB',duration:'00:19:08',source:'檀檀灰',time:'2026-05-12 16:31:47',user:'运营C',tags:['移动-新素材'],script:'庆余年',folder:'短剧库/庆余年',bookId:'L0005',bookName:'庆余年',drama:'庆余年',lang:'中文',cost:1500,doroi:2.9,d0AdRoi:2.2,d0Iaa:580,compliance:82,oldCompliance:76,created:'2026-05-12',businessType:'免费',media:'Meta'},
+  {id:'mat_012',type:'视频',name:'素材_012.mp4',vnName:'Khánh Dư Niên',w:720,h:1280,size:'230MB',duration:'00:15:14',source:'檀檀灰',time:'2026-05-10 16:31:47',user:'运营A',tags:['移动-测试'],script:'庆余年',folder:'短剧库/庆余年',bookId:'L0005',bookName:'庆余年',drama:'Joy of Life',lang:'英文',cost:1100,doroi:2.1,d0AdRoi:1.7,d0Iaa:390,compliance:76,oldCompliance:69,created:'2026-05-10',businessType:'付费',media:'TikTok'}
+];
+// ==================== 素材标签筛选/排除 ====================
+const tagSelection={include:new Set(),exclude:new Set()},activeTagL1={include:null,exclude:null};
+function tagEl(sel,suffix){return document.getElementById('tag'+(sel==='include'?'Include':'Exclude')+suffix)}
+function findTagGroup(id){return mockMaterialTagTree.find(g=>g.id===id)}
+function tagKeyLabel(key){
+  const [level,id]=key.split(':');
+  if(level==='l1'){const g=findTagGroup(id);return g?g.name+'/全部':''}
+  for(const g of mockMaterialTagTree){const c=g.children.find(c=>c.id===id);if(c)return g.name+'/'+c.name}
+  return '';
+}
+function renderTagChips(sel){
+  tagEl(sel,'Chips').innerHTML=[...tagSelection[sel]].map(k=>`<span class="material-tag">${tagKeyLabel(k)}<span class="tag-remove" onclick="removeTagSelection('${sel}','${k}')">&times;</span></span>`).join('');
+}
+function removeTagSelection(sel,key){tagSelection[sel].delete(key);afterTagSelectionChange(sel)}
+function toggleTagPanel(sel){
+  tagEl(sel==='include'?'exclude':'include','Panel').classList.remove('show');
+  const panel=tagEl(sel,'Panel');
+  panel.classList.toggle('show');
+  if(panel.classList.contains('show'))renderTagPanel(sel);
+}
+function closeTagPanels(){document.querySelectorAll('.tag-panel.show').forEach(p=>p.classList.remove('show'))}
+document.addEventListener('click',e=>{if(!e.composedPath().some(el=>el.classList&&el.classList.contains('tag-select-wrap')))closeTagPanels()});
+function selectTagL1(sel,gid){activeTagL1[sel]=gid;renderTagPanel(sel)}
+function groupChecked(sel,gid){
+  const g=findTagGroup(gid);return tagSelection[sel].has('l1:'+gid)||g.children.every(c=>tagSelection[sel].has('l2:'+c.id));
+}
+function groupIndeterminate(sel,gid){
+  const g=findTagGroup(gid);
+  if(tagSelection[sel].has('l1:'+gid)||groupChecked(sel,gid))return false;
+  return g.children.some(c=>tagSelection[sel].has('l2:'+c.id));
+}
+function childChecked(sel,gid,cid){return tagSelection[sel].has('l1:'+gid)||tagSelection[sel].has('l2:'+cid)}
+function toggleTagL1(sel,gid){
+  const g=findTagGroup(gid),set=tagSelection[sel];
+  if(set.has('l1:'+gid)){set.delete('l1:'+gid);g.children.forEach(c=>set.delete('l2:'+c.id))}
+  else{g.children.forEach(c=>set.delete('l2:'+c.id));set.add('l1:'+gid)}
+  afterTagSelectionChange(sel);
+}
+function toggleTagL2(sel,gid,cid){
+  const g=findTagGroup(gid),set=tagSelection[sel],key='l2:'+cid;
+  if(set.has('l1:'+gid)){set.delete('l1:'+gid);g.children.forEach(c=>set.add('l2:'+c.id))}
+  if(set.has(key))set.delete(key);
+  else{set.add(key);if(g.children.every(c=>set.has('l2:'+c.id))){g.children.forEach(c=>set.delete('l2:'+c.id));set.add('l1:'+gid)}}
+  afterTagSelectionChange(sel);
+}
+function afterTagSelectionChange(sel){renderTagChips(sel);renderTagPanel(sel)}
+function renderTagPanel(sel){
+  const term=(tagEl(sel,'Search').value||'').trim().toLowerCase();
+  const groups=mockMaterialTagTree.filter(g=>!term||g.name.toLowerCase().includes(term)||g.children.some(c=>c.name.toLowerCase().includes(term)));
+  if(!groups.some(g=>g.id===activeTagL1[sel]))activeTagL1[sel]=groups[0]?groups[0].id:null;
+  const l1Box=tagEl(sel,'L1');
+  l1Box.innerHTML=groups.length?groups.map(g=>{
+    const checked=groupChecked(sel,g.id),indet=groupIndeterminate(sel,g.id);
+    return `<div class="tag-col-item${activeTagL1[sel]===g.id?' active':''}" onclick="selectTagL1('${sel}','${g.id}')"><input type="checkbox"${checked?' checked':''}${indet?' data-indet="1"':''} onclick="event.stopPropagation();toggleTagL1('${sel}','${g.id}')"><span>${g.name}</span><span class="arrow">›</span></div>`;
+  }).join(''):'<div class="tag-col-empty">无匹配标签</div>';
+  l1Box.querySelectorAll('input[data-indet]').forEach(cb=>cb.indeterminate=true);
+  const g=findTagGroup(activeTagL1[sel]),allChildren=g?g.children:[];
+  const hit=term?allChildren.filter(c=>c.name.toLowerCase().includes(term)):[];
+  const children=!term||hit.length===0?allChildren:hit;
+  tagEl(sel,'L2').innerHTML=children.length?children.map(c=>{
+    const checked=childChecked(sel,g.id,c.id);
+    return `<div class="tag-col-item" onclick="toggleTagL2('${sel}','${g.id}','${c.id}')"><input type="checkbox"${checked?' checked':''} onclick="event.stopPropagation();toggleTagL2('${sel}','${g.id}','${c.id}')"><span>${c.name}</span></div>`;
+  }).join(''):'<div class="tag-col-empty">无匹配标签</div>';
+}
+function serializeTagSelection(sel){return [...tagSelection[sel]].map(k=>{const [level,id]=k.split(':');return {level:level==='l1'?1:2,id}})}
+renderTagChips('include');renderTagChips('exclude');
 initMaterialFilters();
 
 // ==================== 表单提交 ====================
@@ -3475,6 +3597,11 @@ function initMaterialPkg(p){
   document.getElementById('singleRoundRepeat').value=(p&&p.singleRoundRepeat)||1;
   document.getElementById('totalRepeatCount').value=(p&&p.totalRepeatCount)||1;
   document.getElementById('adCount').value=(p&&p.adCount)||'';
+  tagSelection.include.clear();tagSelection.exclude.clear();
+  ((p&&p.includeTags)||[]).forEach(t=>tagSelection.include.add((t.level===1?'l1:':'l2:')+t.id));
+  ((p&&p.excludeTags)||[]).forEach(t=>tagSelection.exclude.add((t.level===1?'l1:':'l2:')+t.id));
+  activeTagL1.include=null;activeTagL1.exclude=null;
+  closeTagPanels();renderTagChips('include');renderTagChips('exclude');
   document.querySelectorAll('#materialConditionGroup .condition-row').forEach((r,i)=>{if(i>0)r.remove()});
   materialSelected={};
   confirmedMaterials=(p&&p.materialIds)?mockMaterialData.filter(m=>p.materialIds.includes(m.id)):[];
@@ -4166,8 +4293,11 @@ function submitPkgDrawer(){
       data.statScope=scope;
       data.businessType=btnVal('#businessTypeBtns','type');
       data.mediaFilter=scope==='mini'?'':btnVal('#mediaFilterBtns','type');
+      data.includeTags=serializeTagSelection('include');
+      data.excludeTags=serializeTagSelection('exclude');
+      const tagText=(data.includeTags.length||data.excludeTags.length)?` · 标签筛选${data.includeTags.length}项/排除${data.excludeTags.length}项`:'';
       const extra=filterType==='custom'?` · 业务类型${btLabel}${scope==='mini'?'':` · 媒体${mdLabel}`}`:'';
-      data.summary=`筛选${scope==='mini'?' · 小程序素材统计':''} · ${ct} · ${condText}${extra} · ${repeatText} · 广告数${data.adCount}`;
+      data.summary=`筛选${scope==='mini'?' · 小程序素材统计':''} · ${ct} · ${condText}${extra}${tagText} · ${repeatText} · 广告数${data.adCount}`;
     }
   }
   if(type==='drama'){
