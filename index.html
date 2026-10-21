@@ -1078,6 +1078,13 @@ tr.unit-row:hover>td{background:#f5f7fa}
           <button type="button" class="btn-option" data-type="custom">自定义</button>
         </div></div>
       </div>
+      <div class="form-item" id="statScopeItem" style="display:none">
+        <label>统计口径</label>
+        <div class="form-control"><div class="btn-group" id="statScopeBtns">
+          <button type="button" class="btn-option active" data-scope="ns">NS素材统计</button>
+          <button type="button" class="btn-option" data-scope="mini">小程序素材统计</button>
+        </div></div>
+      </div>
       <div class="form-item" id="businessTypeItem" style="display:none">
         <label>业务类型</label>
         <div class="form-control"><div class="btn-group" id="businessTypeBtns">
@@ -1148,6 +1155,7 @@ tr.unit-row:hover>td{background:#f5f7fa}
           <button type="button" class="btn-option" data-metric="d0_ad_roi">D0广告ROI</button>
           <button type="button" class="btn-option" data-metric="d0_iaa">D0 IAA</button>
           <button type="button" class="btn-option" data-metric="old_compliance">老达标率</button>
+          <button type="button" class="btn-option" data-metric="d0_pay_users">DO充值用户数</button>
         </div></div>
       </div>
       </div>
@@ -2714,9 +2722,34 @@ document.getElementById('addTimeRange').addEventListener('click',function(){
 });
 
 // ==================== 素材配置 ====================
+const MATERIAL_METRIC_OPTIONS={
+  ns:[['cost','消耗'],['doroi','DOROI'],['d0_ad_roi','D0广告ROI'],['d0_iaa','D0 IAA'],['compliance','综合达标率'],['old_compliance','老达标率'],['d0_pay_users','DO充值用户数']],
+  mini:[['cost','消耗'],['doroi','DOROI'],['d0_ad_roi','D0广告ROI'],['d0_iaa','D0 IAA'],['d0_pay_users','DO充值用户数']]
+};
+function currentStatScope(){return document.querySelector('#statScopeBtns .btn-option.active').dataset.scope}
+function materialMetricOptionsHtml(scope){return MATERIAL_METRIC_OPTIONS[scope].map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}
+function applyStatScope(){
+  const scope=currentStatScope(),allowed=MATERIAL_METRIC_OPTIONS[scope].map(o=>o[0]),used=new Set();
+  document.querySelectorAll('#materialConditionGroup .material-condition-metric').forEach(sel=>{
+    const prev=sel.value;
+    sel.innerHTML=materialMetricOptionsHtml(scope);
+    if(allowed.includes(prev)){sel.value=prev}else{sel.value=MATERIAL_METRIC_OPTIONS[scope].map(o=>o[0]).find(v=>!used.has(v))||'cost'}
+    used.add(sel.value);
+    togglePercentSuffix(sel.closest('.condition-row'));
+  });
+  document.querySelectorAll('#sortMetricBtns .btn-option').forEach(btn=>{btn.style.display=allowed.includes(btn.dataset.metric)?'':'none'});
+  const activeSort=document.querySelector('#sortMetricBtns .btn-option.active');
+  if(!activeSort||!allowed.includes(activeSort.dataset.metric)){
+    document.querySelectorAll('#sortMetricBtns .btn-option').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#sortMetricBtns .btn-option[data-metric="cost"]').classList.add('active');
+  }
+  checkMaterialConditionDuplicate();
+}
 function checkMaterialFilterVisible(){
   const isCustom=document.querySelector('#materialFilterType .btn-option.active').dataset.type==='custom';
-  ['statRangeItem','materialConditionItem','sortMetricItem','materialCountItem','businessTypeItem','mediaFilterItem'].forEach(id=>document.getElementById(id).style.display=isCustom?'flex':'none');
+  ['statScopeItem','statRangeItem','materialConditionItem','sortMetricItem','materialCountItem','businessTypeItem'].forEach(id=>document.getElementById(id).style.display=isCustom?'flex':'none');
+  document.getElementById('mediaFilterItem').style.display=isCustom&&currentStatScope()==='ns'?'flex':'none';
+  applyStatScope();
 }
 function checkMaterialConditionRequired(){
   if(materialMode==='specify'){
@@ -2738,6 +2771,11 @@ function bindBtnGroup(sel){
   })});
 }
 ['#materialCreateTime','#businessTypeBtns','#mediaFilterBtns','#statRangeBtns','#sortMetricBtns','#materialCountType','#singleRoundRepeatType','#totalRepeatType'].forEach(bindBtnGroup);
+document.querySelectorAll('#statScopeBtns .btn-option').forEach(btn=>{btn.addEventListener('click',function(){
+  if(this.dataset.scope===currentStatScope())return;
+  document.querySelectorAll('#statScopeBtns .btn-option').forEach(b=>b.classList.remove('active'));this.classList.add('active');
+  checkMaterialFilterVisible();
+})});
 
 // ==================== 素材选择方式切换 ====================
 document.querySelectorAll('#materialModeBtns .btn-option').forEach(btn=>{btn.addEventListener('click',function(){
@@ -2868,7 +2906,7 @@ function bindOperatorChange(row){row.querySelector('.material-condition-operator
 function checkMaterialConditionDuplicate(){const metrics=Array.from(document.querySelectorAll('.material-condition-metric')).map(m=>m.value);const hasDup=new Set(metrics).size!==metrics.length;document.getElementById('materialConditionError').classList.toggle('show',hasDup);return !hasDup}
 document.getElementById('addMaterialCondition').addEventListener('click',function(){
   const row=document.createElement('div');row.className='condition-row';
-  row.innerHTML='<select class="condition-select material-condition-metric"><option value="cost">消耗</option><option value="doroi">DOROI</option><option value="d0_ad_roi">D0广告ROI</option><option value="d0_iaa">D0 IAA</option><option value="compliance">综合达标率</option><option value="old_compliance">老达标率</option><option value="d0_pay_users">DO充值用户数</option></select><select class="condition-operator material-condition-operator"><option value=">=">>=</option><option value=">">></option><option value="=">=</option><option value="<"><</option><option value="<="><=</option><option value="between">介于</option></select><div class="single-input"><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div></div><div class="between-input-group"><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div><span>至</span><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div></div><button type="button" class="condition-delete">&times;</button>';
+  row.innerHTML=`<select class="condition-select material-condition-metric">${materialMetricOptionsHtml(currentStatScope())}</select><select class="condition-operator material-condition-operator"><option value=">=">>=</option><option value=">">></option><option value="=">=</option><option value="<"><</option><option value="<="><=</option><option value="between">介于</option></select><div class="single-input"><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div></div><div class="between-input-group"><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div><span>至</span><div class="condition-input-wrap"><input type="text" class="condition-input" placeholder="请输入"><span class="condition-input-suffix" style="display:none">%</span></div></div><button type="button" class="condition-delete">&times;</button>`;
   document.getElementById('materialConditionGroup').appendChild(row);
   row.querySelector('.condition-delete').addEventListener('click',()=>{row.remove();checkMaterialConditionRequired()});
   bindOperatorChange(row);row.querySelector('.material-condition-metric').addEventListener('change',function(){checkMaterialConditionDuplicate();togglePercentSuffix(row)});
@@ -3429,6 +3467,7 @@ function initMaterialPkg(p){
   materialMode=mode;
   setBtnGroup('#materialModeBtns','mode',mode);
   setBtnGroup('#materialCreateTime','day',(p&&p.createTime)||'unlimit');
+  setBtnGroup('#statScopeBtns','scope',(p&&p.statScope)||'ns');
   setBtnGroup('#materialFilterType','type',(p&&p.filterType)||'unlimit');
   setBtnGroup('#materialCountType','type','unlimit');
   setBtnGroup('#singleRoundRepeatType','type',(p&&p.singleRoundRepeatType)||'unlimit');
@@ -4121,12 +4160,14 @@ function submitPkgDrawer(){
         const ins=r.querySelectorAll('.condition-input');
         return o==='between'?`${m} ${ins[0].value}~${ins[1].value}`:`${m}${o}${ins[0].value}`;
       }).join(' · '):'不限';
+      const scope=filterType==='custom'?currentStatScope():'ns';
       const btLabel={unlimit:'不限',free:'免费',paid:'付费'}[btnVal('#businessTypeBtns','type')];
       const mdLabel={unlimit:'不限',meta:'Meta',tiktok:'TikTok'}[btnVal('#mediaFilterBtns','type')];
+      data.statScope=scope;
       data.businessType=btnVal('#businessTypeBtns','type');
-      data.mediaFilter=btnVal('#mediaFilterBtns','type');
-      const extra=filterType==='custom'?` · 业务类型${btLabel} · 媒体${mdLabel}`:'';
-      data.summary=`筛选 · ${ct} · ${condText}${extra} · ${repeatText} · 广告数${data.adCount}`;
+      data.mediaFilter=scope==='mini'?'':btnVal('#mediaFilterBtns','type');
+      const extra=filterType==='custom'?` · 业务类型${btLabel}${scope==='mini'?'':` · 媒体${mdLabel}`}`:'';
+      data.summary=`筛选${scope==='mini'?' · 小程序素材统计':''} · ${ct} · ${condText}${extra} · ${repeatText} · 广告数${data.adCount}`;
     }
   }
   if(type==='drama'){
